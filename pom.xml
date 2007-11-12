@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>hudson.plugins.starteam</groupId>
+	<artifactId>hudson-starteam-plugin</artifactId>
+	<packaging>hpi</packaging>
+	<version>0.1-SNAPSHOT</version>
+	<name>Hudson StarTeam plugin</name>
+	
+	<developers>
+		<developer>
+			<name>Ilkka Laukkanen</name>
+			<email>ilkka.s.laukkanen@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+				<role>Project lead</role>
+			</roles>
+			<timezone>2</timezone>
+		</developer>
+	</developers>
+	
+	<parent>
+	  <groupId>org.jvnet.hudson.plugins</groupId>
+	  <artifactId>plugin</artifactId>
+	  <version>1.153</version>
+	  <relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<dependencies>
+		<!--
+			Replace 1.116 with any version of Hudson that you'd like to develop against.
+		-->
+		<!--
+		<dependency>
+			<groupId>org.jvnet.hudson.main</groupId>
+			<artifactId>hudson-core</artifactId>
+			<version>1.149</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jvnet.hudson.main</groupId>
+			<artifactId>hudson-war</artifactId>
+			<type>war</type>
+			<version>1.149</version>
+			<scope>test</scope>
+		</dependency>
+		-->
+		<dependency>
+			<groupId>com.borland</groupId>
+			<artifactId>starteam-sdk</artifactId>
+			<version>9.3</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.borland</groupId>
+			<artifactId>starteam-extensions</artifactId>
+			<version>9.3</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.rsa.jsafe</groupId>
+			<artifactId>jsafe</artifactId>
+			<version>3.5</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+</project>
