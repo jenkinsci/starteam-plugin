@@ -6,7 +6,7 @@
 		
 		See global.jelly for a general discussion about jelly script.
 	-->
-	<f:entry title="Hostname">
+	<f:entry title="Hostname" help="/plugin/starteam/help/sthostname.html">
 		<f:textbox name="starteam.hostname" value="${scm.hostname}" />
 	</f:entry>
 	<f:entry title="Port">

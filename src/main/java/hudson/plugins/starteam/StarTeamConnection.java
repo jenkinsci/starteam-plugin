@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.starbase.starteam.CheckoutOptions;
+import com.starbase.starteam.ClientContext;
 import com.starbase.starteam.File;
 import com.starbase.starteam.Folder;
 import com.starbase.starteam.Item;
@@ -108,8 +109,8 @@ public class StarTeamConnection {
 		try {
 			server.logOn(username, password);
 		} catch (LogonException e) {
-			throw new StarTeamSCMException("Could not log on: " +
-					e.getErrorMessage());
+			throw new StarTeamSCMException("Could not log on: "
+					+ e.getErrorMessage());
 		}
 
 		project = findProjectOnServer(server, projectname);
@@ -117,7 +118,22 @@ public class StarTeamConnection {
 		rootFolder = findFolderInView(view, foldername);
 
 		checkoutoptions = new CheckoutOptions(view);
+		// Always use host system EOL convention
 		checkoutoptions.setEOLConversionEnabled(true);
+		ClientContext ctx = new ClientContext();
+		if (ctx.getEOL().equals(com.starbase.starteam.ClientContext.EOL_CR)) {
+			checkoutoptions.setEOLChars(CheckoutOptions.EOL_CR);
+		} else if (ctx.getEOL().equals(
+				com.starbase.starteam.ClientContext.EOL_CRLF)) {
+			checkoutoptions.setEOLChars(CheckoutOptions.EOL_CRLF);
+		} else if (ctx.getEOL().equals(
+				com.starbase.starteam.ClientContext.EOL_LF)) {
+			checkoutoptions.setEOLChars(CheckoutOptions.EOL_LF);
+		}
+		// Always use timestamp from repository for files
+		checkoutoptions.setTimeStampNow(false);
+		// Use forced checkout so that modified files get clobbered
+		checkoutoptions.setForceCheckout(true);
 	}
 
 	/**
@@ -144,8 +160,8 @@ public class StarTeamConnection {
 				return project;
 			}
 		}
-		throw new StarTeamSCMException("Couldn't find project " + projectname +
-				" on server " + server.getAddress());
+		throw new StarTeamSCMException("Couldn't find project " + projectname
+				+ " on server " + server.getAddress());
 	}
 
 	/**
@@ -161,8 +177,8 @@ public class StarTeamConnection {
 				return view;
 			}
 		}
-		throw new StarTeamSCMException("Couldn't find view " + viewname +
-				" in project " + project.getName());
+		throw new StarTeamSCMException("Couldn't find view " + viewname
+				+ " in project " + project.getName());
 	}
 
 	/**
@@ -185,8 +201,8 @@ public class StarTeamConnection {
 		// If working directory doesn't exist, create it
 		java.io.File workdir = new java.io.File(folder.getPath());
 		if (!workdir.exists()) {
-			logger.println("Creating working directory: " +
-					workdir.getAbsolutePath());
+			logger.println("Creating working directory: "
+					+ workdir.getAbsolutePath());
 			workdir.mkdirs();
 		}
 		// call for subfolders
@@ -238,8 +254,8 @@ public class StarTeamConnection {
 		// Search for the folder in subfolders
 		Folder result = findFolderRecursively(view.getRootFolder(), thefolder);
 		if (result == null) {
-			throw new StarTeamSCMException("Couldn't find folder " +
-					foldername + " in view " + view.getName());
+			throw new StarTeamSCMException("Couldn't find folder " + foldername
+					+ " in view " + view.getName());
 		}
 		return result;
 	}
