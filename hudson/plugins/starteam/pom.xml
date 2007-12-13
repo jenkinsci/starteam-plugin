@@ -1,0 +1,53 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.jvnet.hudson.plugins</groupId>
+		<artifactId>plugin</artifactId>
+		<version>1.160</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<groupId>hudson.plugins</groupId>
+	<artifactId>starteam</artifactId>
+	<packaging>hpi</packaging>
+	<version>0.1.5</version>
+	<name>Hudson StarTeam plugin</name>
+
+	<developers>
+		<developer>
+			<name>Ilkka Laukkanen</name>
+			<email>ilkka.s.laukkanen@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>2</timezone>
+		</developer>
+	</developers>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.borland</groupId>
+			<artifactId>starteam-sdk</artifactId>
+			<version>9.3</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.borland</groupId>
+			<artifactId>starteam-extensions</artifactId>
+			<version>9.3</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.rsa.jsafe</groupId>
+			<artifactId>jsafe</artifactId>
+			<version>3.5</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+  <scm>
+    <tag>starteam-0_1_5</tag>
+  </scm>
+</project>
