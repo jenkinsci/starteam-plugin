@@ -17,7 +17,7 @@ import java.util.Date;
  */
 class StarTeamCheckoutActor implements FileCallable<Boolean> {
 
-	private final Date sinceDate;
+	private final Date buildDate;
 
 	private final File changelog;
 
@@ -33,17 +33,17 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 * @param projectname
 	 * @param viewname
 	 * @param foldername
-	 * @param sinceDate
+	 * @param buildDate
 	 * @param changelogFile
 	 * @param listener
 	 */
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, Date sinceDate, File changelogFile,
+			String foldername, Date buildDate, File changelogFile,
 			BuildListener listener) {
 		this.connection = new StarTeamConnection(hostname, port, user, passwd,
 				projectname, viewname, foldername);
-		this.sinceDate = sinceDate;
+		this.buildDate = buildDate;
 		this.changelog = changelogFile;
 		this.listener = listener;
 	}
@@ -63,11 +63,11 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 			return false;
 		}
 
-		// Look for changed files
+		// Get a list of files that require updating
 		Collection<com.starbase.starteam.File> changed_files = connection
-				.findChangedFiles(workspace, listener.getLogger(), sinceDate);
+				.findAllFiles(workspace, listener.getLogger());
 		// Check 'em out
-		connection.checkOut(changed_files);
+		connection.checkOut(changed_files, listener.getLogger());
 		// TODO: create changelog
 		return true;
 	}

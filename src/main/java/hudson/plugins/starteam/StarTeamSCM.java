@@ -119,8 +119,9 @@ public class StarTeamSCM extends SCM {
 		boolean status = false;
 		// Create an actor to do the polling, possibly on a remote machine
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
-				user, passwd, projectname, viewname, foldername, proj
-						.getLastBuild().getTimestamp().getTime(), listener);
+				user, passwd, projectname, viewname, foldername,
+				proj.getLastBuild().getTimestamp().getTime(),
+				listener);
 		if (workspace.act(p_actor)) {
 			status = true;
 		} else {

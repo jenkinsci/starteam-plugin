@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.starbase.starteam.CheckoutOptions;
 import com.starbase.starteam.ClientContext;
@@ -17,10 +19,13 @@ import com.starbase.starteam.Folder;
 import com.starbase.starteam.Item;
 import com.starbase.starteam.LogonException;
 import com.starbase.starteam.Project;
+import com.starbase.starteam.PropertyNames;
 import com.starbase.starteam.Server;
 import com.starbase.starteam.ServerConfiguration;
 import com.starbase.starteam.ServerInfo;
+import com.starbase.starteam.Status;
 import com.starbase.starteam.View;
+import com.starbase.starteam.ViewConfiguration;
 import com.starbase.util.OLEDate;
 
 /**
@@ -51,8 +56,6 @@ public class StarTeamConnection {
 	private Folder rootFolder = null;
 
 	private Project project = null;
-
-	private CheckoutOptions checkoutoptions;
 
 	/**
 	 * @param hostname
@@ -117,34 +120,50 @@ public class StarTeamConnection {
 		view = findViewInProject(project, viewname);
 		rootFolder = findFolderInView(view, foldername);
 
-		checkoutoptions = new CheckoutOptions(view);
-		// Always use host system EOL convention
-		checkoutoptions.setEOLConversionEnabled(true);
-		ClientContext ctx = new ClientContext();
-		if (ctx.getEOL().equals(com.starbase.starteam.ClientContext.EOL_CR)) {
-			checkoutoptions.setEOLChars(CheckoutOptions.EOL_CR);
-		} else if (ctx.getEOL().equals(
-				com.starbase.starteam.ClientContext.EOL_CRLF)) {
-			checkoutoptions.setEOLChars(CheckoutOptions.EOL_CRLF);
-		} else if (ctx.getEOL().equals(
-				com.starbase.starteam.ClientContext.EOL_LF)) {
-			checkoutoptions.setEOLChars(CheckoutOptions.EOL_LF);
-		}
-		// Always use timestamp from repository for files
-		checkoutoptions.setTimeStampNow(false);
-		// Use forced checkout so that modified files get clobbered
-		checkoutoptions.setForceCheckout(true);
+		// Cache some folder data
+		final PropertyNames pnames = rootFolder.getPropertyNames();
+		final String[] propsToCache = new String[] {
+			pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP,
+			pnames.FILE_NAME, pnames.FILE_FILE_TIME_AT_CHECKIN,
+			pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID,
+			pnames.FILE_STATUS
+		};
+		rootFolder.populateNow(server.getTypeNames().FILE, propsToCache, -1);
 	}
 
 	/**
-	 * @param changed_files
+	 * @param filesToCheckOut
 	 * @throws IOException
 	 *             if checkout fails.
 	 */
-	public void checkOut(Collection<File> changed_files) throws IOException {
-		for (File f : changed_files) {
-			f.checkout(checkoutoptions);
+	public void checkOut(Collection<File> filesToCheckOut,
+			PrintStream logger) throws IOException {
+		logger.println("*** Performing checkout");
+		for (File f : filesToCheckOut) {
+			switch(f.getStatus()) {
+			case Status.MERGE:
+			case Status.MODIFIED:
+			case Status.UNKNOWN:
+				// clobber these
+				new java.io.File(f.getFullName()).delete();
+				break;
+			case Status.MISSING:
+			case Status.OUTOFDATE:
+				// just go on an check out
+				break;
+			default:
+				// By default do nothing, go to next iteration
+				continue;
+			}
+			logger.print("[co] " + f.getFullName() + "... ");
+			f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
+				   false,		   // use timestamp from repo
+				   true,		   // convert EOL to native format
+				   true);		   // update status
+			f.discard();
+			logger.println("ok");
 		}
+		logger.println("*** done");
 	}
 
 	/**
@@ -182,51 +201,95 @@ public class StarTeamConnection {
 	}
 
 	/**
-	 * Recursively look for changes within the given folder made after the given
-	 * date.
-	 * 
-	 * @param logger
-	 * 
+	 * List all files in a given folder.
+	 *
 	 * @param folder
-	 *            The folder to look in.
-	 * @param date
-	 *            The date after which changes are taken into account.
-	 * @return a Collection of File objects that have changed since date.
+	 * 		The folder
+	 * @return a Map of Files, keyed on full pathname.
 	 */
-	private Collection<com.starbase.starteam.File> findChangedFiles(
-			PrintStream logger, final Folder folder, final Date date) {
-		List<com.starbase.starteam.File> files = new ArrayList<com.starbase.starteam.File>();
-		// update folder
-		folder.refresh();
+	private Map<String, File> listAllFiles(Folder folder, PrintStream logger)
+	{
+		logger.println("*** Looking for versioned files in " + folder.getName());
+		Map<String, File> files = new HashMap<String, File>();
 		// If working directory doesn't exist, create it
 		java.io.File workdir = new java.io.File(folder.getPath());
 		if (!workdir.exists()) {
-			logger.println("Creating working directory: "
+			logger.println("*** Creating working directory: "
 					+ workdir.getAbsolutePath());
 			workdir.mkdirs();
 		}
 		// call for subfolders
 		for (Folder f : folder.getSubFolders()) {
-			files.addAll(findChangedFiles(logger, f, date));
+			files.putAll(listAllFiles(f, logger));
 		}
 		// find items in this folder
 		for (Item i : folder.getItems(folder.getView().getProject().getServer()
 				.getTypeNames().FILE)) {
-			com.starbase.starteam.File f = (com.starbase.starteam.File) i;
-			// Check if local exists
-			if (!f.getLocalFileExists()) {
-				logger.println("[new] " + f.getFullName());
-				files.add(f);
-			}
-			// Check modification date
-			else if (i.getModifiedTime().getDoubleValue() > new OLEDate(date)
-					.getDoubleValue()) {
-				// There's a version that's newer than our given date, add
-				// to the collection
-				logger.println("[modified] " + f.getFullName());
-				files.add(f);
+			File f = (com.starbase.starteam.File) i;
+			files.put(f.getParentFolderHierarchy() + f.getName(), f);
+		}
+		folder.discard();
+		return files;
+	}
+
+	/**
+	 * Recursively look for changes between two file lists.
+	 * 
+	 * @param thenFiles
+	 *            The list of files representing a past moment in time.
+	 * @param nowFiles
+	 *            The list of files representing "now".
+	 * @param logger
+	 *            The logger for logging output.
+	 * @return a Collection of File objects that have changed since date.
+	 */
+	private Collection<File> findChangedFiles(
+			Map<String, File> thenFiles,
+			Map<String, File> nowFiles,
+			PrintStream logger) {
+		List<File> files = new ArrayList<File>();
+		logger.println("*** Looking for changes");
+		// Iterate over all files in the "now" set
+		for (Map.Entry e : nowFiles.entrySet()) {
+			File nowFile = (File)e.getValue();
+			// Check if the file existed "then"
+			if (thenFiles.containsKey(e.getKey())) {
+				File thenFile = (File)thenFiles.get(e.getKey());
+				// File exists in the past revision as well
+				if (thenFile.getRevisionNumber()
+						< nowFile.getRevisionNumber()) {
+					// revision number has increased, add it to changes
+					logger.println("[modified] " + nowFile.getFullName());
+					files.add(nowFile);
+				} else if (!nowFile.getLocalFileExists()) {
+					// File not modified but local missing,
+					// add to change list
+					logger.println("[local missing] " + nowFile.getFullName());
+					files.add(nowFile);
+				} else {
+					// File not modified, discard metadata
+					logger.println("[hit] " + nowFile.getFullName());
+					nowFile.discard();
+				}
+				// discard and remove from "then" files
+				thenFile.discard();
+				thenFiles.remove(e.getKey());
+			} else {
+				// File is new
+				logger.println("[new] " + nowFile.getFullName());
+				files.add(nowFile);
 			}
 		}
+		// Iterate over all remaining files in the "then" set:
+		// only files that have been deleted from the repo
+		// since "then" remain, therefore we'll report those 
+		// as changes too.
+		for (Map.Entry e : thenFiles.entrySet()) {
+			logger.println("[deleted] " + ((File)e.getValue()).getFullName());
+			files.add((File)e.getValue());
+		}
+
+		logger.println("*** done");
 		return files;
 	}
 
@@ -298,23 +361,71 @@ public class StarTeamConnection {
 		return null;
 	}
 
+	public Collection<File> findAllFiles(java.io.File workspace, PrintStream logger) {
+		logger.println("*** Get list of all files for " + workspace);
+
+		// set root folder
+		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
+
+		// Get a list of all files
+		Map<String, File> nowFiles = listAllFiles(rootFolder, logger);
+
+		logger.println("*** done");
+		return nowFiles.values();
+	}
+
 	/**
 	 * @param workspace
 	 * @param logger
-	 * @param sinceDate
+	 * @param fromDate
 	 * @return
 	 */
 	public Collection<File> findChangedFiles(java.io.File workspace,
-			PrintStream logger, Date sinceDate) {
+			PrintStream logger, Date fromDate) {
+		logger.println("*** Looking for changed files since " + fromDate);
 		// set root folder
 		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
-		return findChangedFiles(logger, rootFolder, sinceDate);
+		// Create OLEDate to represent last build time
+		OLEDate oleSince = new OLEDate(fromDate);
+		// Create a view to represent last build time
+		View sinceView = new View(view, ViewConfiguration
+				.createFromTime(oleSince));
+
+		// This list will contain the changed files
+		Collection<File> changedFiles = null;
+
+		// Get a list of all files
+		logger.println("Fetching current files:");
+		Map<String, File> nowFiles = listAllFiles(rootFolder, logger);
+		logger.println("done");
+
+		Folder sinceFolder = null;
+		Map<String, File> sinceFiles = null;
+		try {
+			sinceFolder = findFolderInView(sinceView, foldername);
+			sinceFolder.setAlternatePathFragment(workspace.getAbsolutePath());
+			logger.println("Fetching files at " + fromDate);
+			sinceFiles = listAllFiles(sinceFolder, logger);
+			logger.println("done");
+			logger.println("Comparing");
+			changedFiles = findChangedFiles(sinceFiles, nowFiles, logger);
+			logger.println("done");
+		} catch (StarTeamSCMException e) {
+			// Folder not found? That means that every file is a change
+			changedFiles = nowFiles.values();
+		}
+
+		logger.println("*** done");
+		return changedFiles;
 	}
 
 	/**
 	 * Close the connection.
 	 */
 	public void close() {
+		rootFolder.discardItems(rootFolder.getTypeNames().FILE, -1);
+		view.discard();
+		project.discard();
 		server.disconnect();
 	}
 
