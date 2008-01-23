@@ -12,7 +12,7 @@
 	<groupId>hudson.plugins</groupId>
 	<artifactId>starteam</artifactId>
 	<packaging>hpi</packaging>
-	<version>0.1.6-SNAPSHOT</version>
+	<version>0.1.6</version>
 	<name>Hudson StarTeam plugin</name>
 
 	<developers>
@@ -46,4 +46,8 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
+
+  <scm>
+    <tag>starteam-0_1_6</tag>
+  </scm>
 </project>
