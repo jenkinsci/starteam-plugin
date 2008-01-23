@@ -8,12 +8,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
-import com.starbase.starteam.CheckoutOptions;
-import com.starbase.starteam.ClientContext;
 import com.starbase.starteam.File;
 import com.starbase.starteam.Folder;
 import com.starbase.starteam.Item;
@@ -123,11 +121,10 @@ public class StarTeamConnection {
 		// Cache some folder data
 		final PropertyNames pnames = rootFolder.getPropertyNames();
 		final String[] propsToCache = new String[] {
-			pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP,
-			pnames.FILE_NAME, pnames.FILE_FILE_TIME_AT_CHECKIN,
-			pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID,
-			pnames.FILE_STATUS
-		};
+				pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP,
+				pnames.FILE_NAME, pnames.FILE_FILE_TIME_AT_CHECKIN,
+				pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID,
+				pnames.FILE_STATUS };
 		rootFolder.populateNow(server.getTypeNames().FILE, propsToCache, -1);
 	}
 
@@ -136,11 +133,11 @@ public class StarTeamConnection {
 	 * @throws IOException
 	 *             if checkout fails.
 	 */
-	public void checkOut(Collection<File> filesToCheckOut,
-			PrintStream logger) throws IOException {
+	public void checkOut(Collection<File> filesToCheckOut, PrintStream logger)
+			throws IOException {
 		logger.println("*** Performing checkout");
 		for (File f : filesToCheckOut) {
-			switch(f.getStatus()) {
+			switch (f.getStatus()) {
 			case Status.MERGE:
 			case Status.MODIFIED:
 			case Status.UNKNOWN:
@@ -157,9 +154,9 @@ public class StarTeamConnection {
 			}
 			logger.print("[co] " + f.getFullName() + "... ");
 			f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
-				   false,		   // use timestamp from repo
-				   true,		   // convert EOL to native format
-				   true);		   // update status
+					false, // use timestamp from repo
+					true, // convert EOL to native format
+					true); // update status
 			f.discard();
 			logger.println("ok");
 		}
@@ -202,14 +199,15 @@ public class StarTeamConnection {
 
 	/**
 	 * List all files in a given folder.
-	 *
+	 * 
 	 * @param folder
-	 * 		The folder
+	 *            The folder
 	 * @return a Map of Files, keyed on full pathname.
 	 */
-	private Map<String, File> listAllFiles(Folder folder, PrintStream logger)
-	{
-		logger.println("*** Looking for versioned files in " + folder.getName());
+	private Map<String, File> listAllFiles(Folder folder, PrintStream logger) {
+		logger
+				.println("*** Looking for versioned files in "
+						+ folder.getName());
 		Map<String, File> files = new HashMap<String, File>();
 		// If working directory doesn't exist, create it
 		java.io.File workdir = new java.io.File(folder.getPath());
@@ -226,7 +224,13 @@ public class StarTeamConnection {
 		for (Item i : folder.getItems(folder.getView().getProject().getServer()
 				.getTypeNames().FILE)) {
 			File f = (com.starbase.starteam.File) i;
-			files.put(f.getParentFolderHierarchy() + f.getName(), f);
+			try {
+				// This sometimes throws... deep inside starteam =(
+				files.put(f.getParentFolderHierarchy() + f.getName(), f);
+			} catch (RuntimeException e) {
+				logger.println("Exception in listAllFiles: "
+						+ e.getLocalizedMessage());
+			}
 		}
 		folder.discard();
 		return files;
@@ -243,21 +247,17 @@ public class StarTeamConnection {
 	 *            The logger for logging output.
 	 * @return a Collection of File objects that have changed since date.
 	 */
-	private Collection<File> findChangedFiles(
-			Map<String, File> thenFiles,
-			Map<String, File> nowFiles,
-			PrintStream logger) {
+	private Collection<File> getFileSetDifferences(Map<String, File> thenFiles,
+			Map<String, File> nowFiles, PrintStream logger) {
 		List<File> files = new ArrayList<File>();
-		logger.println("*** Looking for changes");
 		// Iterate over all files in the "now" set
 		for (Map.Entry e : nowFiles.entrySet()) {
-			File nowFile = (File)e.getValue();
+			File nowFile = (File) e.getValue();
 			// Check if the file existed "then"
 			if (thenFiles.containsKey(e.getKey())) {
-				File thenFile = (File)thenFiles.get(e.getKey());
+				File thenFile = thenFiles.get(e.getKey());
 				// File exists in the past revision as well
-				if (thenFile.getRevisionNumber()
-						< nowFile.getRevisionNumber()) {
+				if (thenFile.getRevisionNumber() < nowFile.getRevisionNumber()) {
 					// revision number has increased, add it to changes
 					logger.println("[modified] " + nowFile.getFullName());
 					files.add(nowFile);
@@ -282,14 +282,13 @@ public class StarTeamConnection {
 		}
 		// Iterate over all remaining files in the "then" set:
 		// only files that have been deleted from the repo
-		// since "then" remain, therefore we'll report those 
+		// since "then" remain, therefore we'll report those
 		// as changes too.
 		for (Map.Entry e : thenFiles.entrySet()) {
-			logger.println("[deleted] " + ((File)e.getValue()).getFullName());
-			files.add((File)e.getValue());
+			logger.println("[deleted] " + ((File) e.getValue()).getFullName());
+			files.add((File) e.getValue());
 		}
 
-		logger.println("*** done");
 		return files;
 	}
 
@@ -361,7 +360,8 @@ public class StarTeamConnection {
 		return null;
 	}
 
-	public Collection<File> findAllFiles(java.io.File workspace, PrintStream logger) {
+	public Collection<File> findAllFiles(java.io.File workspace,
+			PrintStream logger) {
 		logger.println("*** Get list of all files for " + workspace);
 
 		// set root folder
@@ -408,9 +408,10 @@ public class StarTeamConnection {
 			sinceFiles = listAllFiles(sinceFolder, logger);
 			logger.println("done");
 			logger.println("Comparing");
-			changedFiles = findChangedFiles(sinceFiles, nowFiles, logger);
+			changedFiles = getFileSetDifferences(sinceFiles, nowFiles, logger);
 			logger.println("done");
 		} catch (StarTeamSCMException e) {
+			logger.println("Caught exception: " + e.getLocalizedMessage());
 			// Folder not found? That means that every file is a change
 			changedFiles = nowFiles.values();
 		}
