@@ -17,8 +17,22 @@ import java.util.Date;
  */
 public class StarTeamPollingActor implements FileCallable<Boolean> {
 
-	private final StarTeamConnection connection;
+	private String hostname;
+
+	private int port;
+
+	private String user;
+
+	private String passwd;
+
+	private String projectname;
+
+	private String viewname;
+
+	private String foldername;
+
 	private final TaskListener listener;
+	
 	private final Date sinceDate;
 
 	/**
@@ -35,8 +49,13 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
 			String foldername, Date sinceDate, TaskListener listener) {
-		this.connection = new StarTeamConnection(hostname, port, user, passwd,
-				projectname, viewname, foldername);
+		this.hostname = hostname;
+		this.port = port;
+		this.user = user;
+		this.passwd = passwd;
+		this.projectname = projectname;
+		this.viewname = viewname;
+		this.foldername = foldername;
 		this.listener = listener;
 		this.sinceDate = sinceDate;
 	}
@@ -48,6 +67,9 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 *      hudson.remoting.VirtualChannel)
 	 */
 	public Boolean invoke(File f, VirtualChannel channel) throws IOException {
+		StarTeamConnection connection = new StarTeamConnection(
+				hostname, port, user, passwd,
+				projectname, viewname, foldername);
 		try {
 			connection.initialize();
 		} catch (StarTeamSCMException e) {
@@ -57,16 +79,11 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		}
 		if (connection.findChangedFiles(f, listener.getLogger(), sinceDate)
 				.isEmpty()) {
+			connection.close();
 			return false;
 		}
-		return true;
-	}
-
-	/**
-	 * 
-	 */
-	public void dispose() {
 		connection.close();
+		return true;
 	}
 
 }

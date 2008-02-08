@@ -23,7 +23,19 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 
 	private final BuildListener listener;
 
-	private final StarTeamConnection connection;
+	private String hostname;
+
+	private int port;
+
+	private String user;
+
+	private String passwd;
+
+	private String projectname;
+
+	private String viewname;
+
+	private String foldername;
 
 	/**
 	 * @param hostname
@@ -41,8 +53,13 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 			String passwd, String projectname, String viewname,
 			String foldername, Date buildDate, File changelogFile,
 			BuildListener listener) {
-		this.connection = new StarTeamConnection(hostname, port, user, passwd,
-				projectname, viewname, foldername);
+		this.hostname = hostname;
+		this.port = port;
+		this.user = user;
+		this.passwd = passwd;
+		this.projectname = projectname;
+		this.viewname = viewname;
+		this.foldername = foldername;
 		this.buildDate = buildDate;
 		this.changelog = changelogFile;
 		this.listener = listener;
@@ -56,6 +73,9 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 */
 	public Boolean invoke(File workspace, VirtualChannel channel)
 			throws IOException {
+		StarTeamConnection connection = new StarTeamConnection(
+				hostname, port, user, passwd,
+				projectname, viewname, foldername);
 		try {
 			connection.initialize();
 		} catch (StarTeamSCMException e) {
@@ -69,14 +89,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		// Check 'em out
 		connection.checkOut(changed_files, listener.getLogger());
 		// TODO: create changelog
-		return true;
-	}
-
-	/**
-	 * 
-	 */
-	public void dispose() {
 		connection.close();
+		return true;
 	}
 
 }

@@ -81,7 +81,6 @@ public class StarTeamSCM extends SCM {
 			listener.getLogger().println("StarTeam checkout failed");
 			status = false;
 		}
-		co_actor.dispose();
 		return status;
 	}
 
@@ -127,7 +126,6 @@ public class StarTeamSCM extends SCM {
 		} else {
 			listener.getLogger().println("StarTeam polling failed");
 		}
-		p_actor.dispose();
 		return status;
 	}
 
