@@ -1,10 +1,8 @@
-/**
- * 
- */
 package hudson.plugins.starteam;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -31,126 +29,136 @@ import com.starbase.util.OLEDate;
  * to a given project, view and folder.
  * 
  * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
- * 
  */
-public class StarTeamConnection {
+public class StarTeamConnection implements Serializable {
+	private static final long serialVersionUID = 1L;
 
-	private final ServerInfo serverinfo;
-
-	private final String username;
-
+	private final String hostName;
+	private final int port;
+	private final String userName;
 	private final String password;
+	private final String projectName;
+	private final String viewName;
+	private final String folderName;
 
-	private final String projectname;
-
-	private final String viewname;
-
-	private final String foldername;
-
-	private Server server = null;
-
-	private View view = null;
-
-	private Folder rootFolder = null;
-
-	private Project project = null;
+	private transient Server server;
+	private transient View view;
+	private transient Folder rootFolder;
+	private transient Project project;
 
 	/**
-	 * @param hostname
+	 * @param hostName
 	 * @param port
-	 * @param user
-	 * @param passwd
-	 * @param projectname
-	 * @param viewname
-	 * @param foldername
+	 * @param userName
+	 * @param password
+	 * @param projectName
+	 * @param viewName
+	 * @param folderName
 	 */
-	public StarTeamConnection(String hostname, int port, String user,
-			String passwd, String projectname, String viewname,
-			String foldername) {
-		// Create the server information object
-		serverinfo = new ServerInfo();
-		serverinfo
-				.setConnectionType(ServerConfiguration.PROTOCOL_TCP_IP_SOCKETS);
+	public StarTeamConnection(String hostName, int port, String userName, String password, String projectName, String viewName, String folderName) {
+		checkParameters(hostName, port, userName, password, projectName, viewName, folderName);
+		this.hostName = hostName;
+		this.port = port;
+		this.userName = userName;
+		this.password = password;
+		this.projectName = projectName;
+		this.viewName = viewName;
+		this.folderName = folderName;
+	}
 
-		// Do a trick in case there are several hosts with the same
-		// description: if an exception is thrown, start adding a counter
-		// to the end of the string.
-		String desc_base = "StarTeam connection to " + hostname;
-		String desc = desc_base;
-		do {
-			int ctr = 1;
-			try {
-				serverinfo.setDescription(desc);
-				break;
-			} catch (com.starbase.starteam.DuplicateServerListEntryException e) {
-				desc = desc_base + " (" + Integer.toString(ctr++) + ")";
-			}
-		} while (true);
+	private ServerInfo createServerInfo() {
+		ServerInfo serverInfo = new ServerInfo();
+		serverInfo.setConnectionType(ServerConfiguration.PROTOCOL_TCP_IP_SOCKETS);
+		serverInfo.setHost(this.hostName);
+		serverInfo.setPort(this.port);
 
-		serverinfo.setHost(hostname);
-		serverinfo.setPort(port);
+		populateDescription(serverInfo);
 
-		this.username = user;
-		this.password = passwd;
-		this.projectname = projectname;
-		this.viewname = viewname;
-		this.foldername = foldername;
+		return serverInfo;
+	}
+
+	void populateDescription(ServerInfo serverInfo) {
+		// Increment a counter until the description is unique
+		int counter = 0;
+		while (!setDescription(serverInfo, counter))
+			++counter;
+	}
+
+	private boolean setDescription(ServerInfo serverInfo, int counter) {
+		try {
+			serverInfo.setDescription("StarTeam connection to " + this.hostName + ((counter == 0) ? "" : " (" + Integer.toString(counter) + ")"));
+			return true;
+		} catch (com.starbase.starteam.DuplicateServerListEntryException e) {
+			return false;
+		}
+	}
+
+	private void checkParameters(String hostName, int port, String userName, String password, String projectName, String viewName,
+			String folderName) {
+		if (null == hostName)
+			throw new NullPointerException("hostName cannot be null");
+		if (null == userName)
+			throw new NullPointerException("user cannot be null");
+		if (null == password)
+			throw new NullPointerException("passwd cannot be null");
+		if (null == projectName)
+			throw new NullPointerException("projectName cannot be null");
+		if (null == viewName)
+			throw new NullPointerException("viewName cannot be null");
+		if (null == folderName)
+			throw new NullPointerException("folderName cannot be null");
+
+		if ((port < 1) || (port > 65535))
+			throw new IllegalArgumentException("Invalid port: " + port);
 	}
 
 	/**
 	 * Initialize the connection. This means logging on to the server and
 	 * finding the project, view and folder we want.
 	 * 
-	 * @throws StarTeamSCMException
-	 *             if logging on fails.
+	 * @throws StarTeamSCMException if logging on fails.
 	 */
 	public void initialize() throws StarTeamSCMException {
-		server = new Server(serverinfo);
+		server = new Server(createServerInfo());
 		server.connect();
 		try {
-			server.logOn(username, password);
+			server.logOn(userName, password);
 		} catch (LogonException e) {
-			throw new StarTeamSCMException("Could not log on: "
-					+ e.getErrorMessage());
+			throw new StarTeamSCMException("Could not log on: " + e.getErrorMessage());
 		}
 
-		project = findProjectOnServer(server, projectname);
-		view = findViewInProject(project, viewname);
-		rootFolder = findFolderInView(view, foldername);
+		project = findProjectOnServer(server, projectName);
+		view = findViewInProject(project, viewName);
+		rootFolder = findFolderInView(view, folderName);
 
 		// Cache some folder data
 		final PropertyNames pnames = rootFolder.getPropertyNames();
-		final String[] propsToCache = new String[] {
-				pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP,
-				pnames.FILE_NAME, pnames.FILE_FILE_TIME_AT_CHECKIN,
-				pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID,
-				pnames.FILE_STATUS };
+		final String[] propsToCache = new String[] { pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP, pnames.FILE_NAME,
+				pnames.FILE_FILE_TIME_AT_CHECKIN, pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID, pnames.FILE_STATUS };
 		rootFolder.populateNow(server.getTypeNames().FILE, propsToCache, -1);
 	}
 
 	/**
 	 * @param filesToCheckOut
-	 * @throws IOException
-	 *             if checkout fails.
+	 * @throws IOException if checkout fails.
 	 */
-	public void checkOut(Collection<File> filesToCheckOut, PrintStream logger)
-			throws IOException {
+	public void checkOut(Collection<File> filesToCheckOut, PrintStream logger) throws IOException {
 		logger.println("*** Performing checkout");
 		for (File f : filesToCheckOut) {
 			switch (f.getStatus()) {
-			case Status.MERGE:
-			case Status.MODIFIED:
-			case Status.UNKNOWN:
-				// clobber these
-				new java.io.File(f.getFullName()).delete();
-				break;
-			case Status.MISSING:
-			case Status.OUTOFDATE:
-				// just go on an check out
-				break;
-			default:
-				// By default do nothing, go to next iteration
-				continue;
+				case Status.MERGE:
+				case Status.MODIFIED:
+				case Status.UNKNOWN:
+					// clobber these
+					new java.io.File(f.getFullName()).delete();
+					break;
+				case Status.MISSING:
+				case Status.OUTOFDATE:
+					// just go on an check out
+					break;
+				default:
+					// By default do nothing, go to next iteration
+					continue;
 			}
 			logger.print("[co] " + f.getFullName() + "... ");
 			f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
@@ -169,15 +177,13 @@ public class StarTeamConnection {
 	 * @return
 	 * @throws StarTeamSCMException
 	 */
-	static Project findProjectOnServer(final Server server,
-			final String projectname) throws StarTeamSCMException {
+	static Project findProjectOnServer(final Server server, final String projectname) throws StarTeamSCMException {
 		for (Project project : server.getProjects()) {
 			if (project.getName().equals(projectname)) {
 				return project;
 			}
 		}
-		throw new StarTeamSCMException("Couldn't find project " + projectname
-				+ " on server " + server.getAddress());
+		throw new StarTeamSCMException("Couldn't find project " + projectname + " on server " + server.getAddress());
 	}
 
 	/**
@@ -186,34 +192,28 @@ public class StarTeamConnection {
 	 * @return
 	 * @throws StarTeamSCMException
 	 */
-	static View findViewInProject(final Project project, final String viewname)
-			throws StarTeamSCMException {
+	static View findViewInProject(final Project project, final String viewname) throws StarTeamSCMException {
 		for (View view : project.getAccessibleViews()) {
 			if (view.getName().equals(viewname)) {
 				return view;
 			}
 		}
-		throw new StarTeamSCMException("Couldn't find view " + viewname
-				+ " in project " + project.getName());
+		throw new StarTeamSCMException("Couldn't find view " + viewname + " in project " + project.getName());
 	}
 
 	/**
 	 * List all files in a given folder.
 	 * 
-	 * @param folder
-	 *            The folder
+	 * @param folder The folder
 	 * @return a Map of Files, keyed on full pathname.
 	 */
 	private Map<String, File> listAllFiles(Folder folder, PrintStream logger) {
-		logger
-				.println("*** Looking for versioned files in "
-						+ folder.getName());
+		logger.println("*** Looking for versioned files in " + folder.getName());
 		Map<String, File> files = new HashMap<String, File>();
 		// If working directory doesn't exist, create it
 		java.io.File workdir = new java.io.File(folder.getPath());
 		if (!workdir.exists()) {
-			logger.println("*** Creating working directory: "
-					+ workdir.getAbsolutePath());
+			logger.println("*** Creating working directory: " + workdir.getAbsolutePath());
 			workdir.mkdirs();
 		}
 		// call for subfolders
@@ -221,15 +221,13 @@ public class StarTeamConnection {
 			files.putAll(listAllFiles(f, logger));
 		}
 		// find items in this folder
-		for (Item i : folder.getItems(folder.getView().getProject().getServer()
-				.getTypeNames().FILE)) {
+		for (Item i : folder.getItems(folder.getView().getProject().getServer().getTypeNames().FILE)) {
 			File f = (com.starbase.starteam.File) i;
 			try {
 				// This sometimes throws... deep inside starteam =(
 				files.put(f.getParentFolderHierarchy() + f.getName(), f);
 			} catch (RuntimeException e) {
-				logger.println("Exception in listAllFiles: "
-						+ e.getLocalizedMessage());
+				logger.println("Exception in listAllFiles: " + e.getLocalizedMessage());
 			}
 		}
 		folder.discard();
@@ -239,20 +237,16 @@ public class StarTeamConnection {
 	/**
 	 * Recursively look for changes between two file lists.
 	 * 
-	 * @param thenFiles
-	 *            The list of files representing a past moment in time.
-	 * @param nowFiles
-	 *            The list of files representing "now".
-	 * @param logger
-	 *            The logger for logging output.
+	 * @param thenFiles The list of files representing a past moment in time.
+	 * @param nowFiles The list of files representing "now".
+	 * @param logger The logger for logging output.
 	 * @return a Collection of File objects that have changed since date.
 	 */
-	private Collection<File> getFileSetDifferences(Map<String, File> thenFiles,
-			Map<String, File> nowFiles, PrintStream logger) {
+	private Collection<File> getFileSetDifferences(Map<String, File> thenFiles, Map<String, File> nowFiles, PrintStream logger) {
 		List<File> files = new ArrayList<File>();
 		// Iterate over all files in the "now" set
-		for (Map.Entry e : nowFiles.entrySet()) {
-			File nowFile = (File) e.getValue();
+		for (Map.Entry<String, File> e : nowFiles.entrySet()) {
+			File nowFile = e.getValue();
 			// Check if the file existed "then"
 			if (thenFiles.containsKey(e.getKey())) {
 				File thenFile = thenFiles.get(e.getKey());
@@ -284,9 +278,9 @@ public class StarTeamConnection {
 		// only files that have been deleted from the repo
 		// since "then" remain, therefore we'll report those
 		// as changes too.
-		for (Map.Entry e : thenFiles.entrySet()) {
-			logger.println("[deleted] " + ((File) e.getValue()).getFullName());
-			files.add((File) e.getValue());
+		for (Map.Entry<String, File> e : thenFiles.entrySet()) {
+			logger.println("[deleted] " + e.getValue().getFullName());
+			files.add(e.getValue());
 		}
 
 		return files;
@@ -295,15 +289,12 @@ public class StarTeamConnection {
 	/**
 	 * Find the given folder in the given view.
 	 * 
-	 * @param view
-	 *            The view to look in.
-	 * @param foldername
-	 *            The view-relative path of the folder to look for.
+	 * @param view The view to look in.
+	 * @param foldername The view-relative path of the folder to look for.
 	 * @return The folder or null if a folder by the given name was not found.
 	 * @throws StarTeamSCMException
 	 */
-	private Folder findFolderInView(final View view, final String foldername)
-			throws StarTeamSCMException {
+	private Folder findFolderInView(final View view, final String foldername) throws StarTeamSCMException {
 		// Check the root folder of the view
 		if (view.getName().equals(foldername)) {
 			return view.getRootFolder();
@@ -316,8 +307,7 @@ public class StarTeamConnection {
 		// Search for the folder in subfolders
 		Folder result = findFolderRecursively(view.getRootFolder(), thefolder);
 		if (result == null) {
-			throw new StarTeamSCMException("Couldn't find folder " + foldername
-					+ " in view " + view.getName());
+			throw new StarTeamSCMException("Couldn't find folder " + foldername + " in view " + view.getName());
 		}
 		return result;
 	}
@@ -326,10 +316,8 @@ public class StarTeamConnection {
 	 * Do a breadth-first search for a folder with the given name, starting with
 	 * children of the provided folder.
 	 * 
-	 * @param folder
-	 *            the folder whose children to check
-	 * @param thefolder
-	 *            the folder to look for
+	 * @param folder the folder whose children to check
+	 * @param thefolder the folder to look for
 	 * @return
 	 */
 	private Folder findFolderRecursively(Folder folder, java.io.File thefolder) {
@@ -342,8 +330,7 @@ public class StarTeamConnection {
 			// the full folder name (including root folder name which
 			// is the same as the view name) terminated by the
 			// platform-specific separator.
-			if (f.getFolderHierarchy().equals(
-					thefolder.getPath() + java.io.File.separator)) {
+			if (f.getFolderHierarchy().equals(thefolder.getPath() + java.io.File.separator)) {
 				return f;
 			} else {
 				// add to list of folders whose children will be checked
@@ -360,8 +347,7 @@ public class StarTeamConnection {
 		return null;
 	}
 
-	public Collection<File> findAllFiles(java.io.File workspace,
-			PrintStream logger) {
+	public Collection<File> findAllFiles(java.io.File workspace, PrintStream logger) {
 		logger.println("*** Get list of all files for " + workspace);
 
 		// set root folder
@@ -380,16 +366,14 @@ public class StarTeamConnection {
 	 * @param fromDate
 	 * @return
 	 */
-	public Collection<File> findChangedFiles(java.io.File workspace,
-			PrintStream logger, Date fromDate) {
+	public Collection<File> findChangedFiles(java.io.File workspace, PrintStream logger, Date fromDate) {
 		logger.println("*** Looking for changed files since " + fromDate);
 		// set root folder
 		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
 		// Create OLEDate to represent last build time
 		OLEDate oleSince = new OLEDate(fromDate);
 		// Create a view to represent last build time
-		View sinceView = new View(view, ViewConfiguration
-				.createFromTime(oleSince));
+		View sinceView = new View(view, ViewConfiguration.createFromTime(oleSince));
 
 		// This list will contain the changed files
 		Collection<File> changedFiles = null;
@@ -402,7 +386,7 @@ public class StarTeamConnection {
 		Folder sinceFolder = null;
 		Map<String, File> sinceFiles = null;
 		try {
-			sinceFolder = findFolderInView(sinceView, foldername);
+			sinceFolder = findFolderInView(sinceView, folderName);
 			sinceFolder.setAlternatePathFragment(workspace.getAbsolutePath());
 			logger.println("Fetching files at " + fromDate);
 			sinceFiles = listAllFiles(sinceFolder, logger);
