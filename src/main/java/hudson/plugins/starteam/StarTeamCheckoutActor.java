@@ -18,23 +18,14 @@ import java.util.Date;
 class StarTeamCheckoutActor implements FileCallable<Boolean> {
 
 	private final Date buildDate;
-
 	private final File changelog;
-
 	private final BuildListener listener;
-
 	private String hostname;
-
 	private int port;
-
 	private String user;
-
 	private String passwd;
-
 	private String projectname;
-
 	private String viewname;
-
 	private String foldername;
 
 	/**
