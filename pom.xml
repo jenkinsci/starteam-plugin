@@ -25,6 +25,14 @@
 			</roles>
 			<timezone>2</timezone>
 		</developer>
+		<developer>
+			<name>John McNair</name>
+			<email>john@mcnair.org</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-5</timezone>
+		</developer>
 	</developers>
 
 	<dependencies>
