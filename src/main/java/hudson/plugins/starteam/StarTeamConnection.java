@@ -434,4 +434,30 @@ public class StarTeamConnection {
 	protected void finalize() throws Throwable {
 		close();
 	}
+
+	@Override
+	public boolean equals(Object object) {
+		if (null == object)
+			return false;
+
+		if (!getClass().equals(object.getClass()))
+			return false;
+
+		StarTeamConnection other = (StarTeamConnection) object;
+
+		return port == other.port && hostName.equals(other.hostName) && userName.equals(other.userName) &&
+				password.equals(other.password) && projectName.equals(other.projectName) && viewName.equals(other.viewName) &&
+				folderName.equals(other.folderName);
+	}
+
+	@Override
+	public int hashCode() {
+		return userName.hashCode();
+	}
+
+	@Override
+	public String toString() {
+		return "host: " + hostName + ", port: " + Integer.toString(port) + ", user: " + userName + ", passwd: ******, project: " +
+				projectName + ", view: " + viewName + ", folder: " + folderName;
+	}
 }
