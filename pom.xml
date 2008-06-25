@@ -35,24 +35,109 @@
 		</developer>
 	</developers>
 
+	<pluginRepositories>
+		<pluginRepository>
+			<id>snapshots.repository.codehaus.org</id>
+			<url>http://snapshots.repository.codehaus.org</url>
+		</pluginRepository>
+	</pluginRepositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam-sdk</artifactId>
-			<version>9.3</version>
+			<artifactId>starteam100</artifactId>
+			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam-extensions</artifactId>
-			<version>9.3</version>
+			<artifactId>starteam100-resources</artifactId>
+			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.rsa.jsafe</groupId>
-			<artifactId>jsafe</artifactId>
-			<version>3.5</version>
+			<groupId>com.smartsockets</groupId>
+			<artifactId>ss</artifactId>
+			<version>1</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.4</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jmock</groupId>
+			<artifactId>jmock-junit4</artifactId>
+			<version>2.4.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>jmock</groupId>
+			<artifactId>jmock-cglib</artifactId>
+			<version>1.2.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.objenesis</groupId>
+			<artifactId>objenesis</artifactId>
+			<version>1.1</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+
+	<build>
+		<finalName>starteam</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.5</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.4.3</version>
+				<configuration>
+					<forkMode>always</forkMode>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>1.2</version>
+				<configuration>
+					<findbugsXmlOutput>true</findbugsXmlOutput>
+					<xmlOutput>true</xmlOutput>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>emma-maven-plugin</artifactId>
+				<version>1.0-SNAPSHOT</version>
+				<inherited>true</inherited>
+				<executions>
+					<execution>
+						<goals>
+							<goal>instrument</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>emma-maven-plugin</artifactId>
+				<version>1.0-SNAPSHOT</version>
+				<inherited>true</inherited>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>
