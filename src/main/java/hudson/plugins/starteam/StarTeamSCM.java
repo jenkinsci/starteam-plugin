@@ -32,11 +32,6 @@ public class StarTeamSCM extends SCM {
 	 */
 	public static final StarTeamSCMDescriptorImpl DESCRIPTOR = new StarTeamSCMDescriptorImpl();
 
-	/**
-	 * Repo browser instance.
-	 */
-	private StarTeamRepositoryBrowser repositoryBrowser;
-
 	private final String user;
 	private final String passwd;
 	private final String projectname;
@@ -135,8 +130,7 @@ public class StarTeamSCM extends SCM {
 	 * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
 	 * 
 	 */
-	public static final class StarTeamSCMDescriptorImpl extends
-			SCMDescriptor<StarTeamSCM> {
+	public static final class StarTeamSCMDescriptorImpl extends SCMDescriptor<StarTeamSCM> {
 
 		private final Collection<StarTeamSCM> scms = new ArrayList<StarTeamSCM>();
 
