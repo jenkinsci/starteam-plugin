@@ -1,6 +1,3 @@
-/**
- * 
- */
 package hudson.plugins.starteam;
 
 import hudson.model.AbstractBuild;
@@ -13,10 +10,6 @@ import java.io.IOException;
 
 import org.xml.sax.SAXException;
 
-/**
- * @author ip90568
- * 
- */
 public class StarTeamChangeLogParser extends ChangeLogParser {
 
 	/*
@@ -28,7 +21,6 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
 	@Override
 	public ChangeLogSet<? extends Entry> parse(AbstractBuild build,
 			File changelogFile) throws IOException, SAXException {
-		// TODO Auto-generated method stub
 		return ChangeLogSet.createEmpty(build);
 	}
 
