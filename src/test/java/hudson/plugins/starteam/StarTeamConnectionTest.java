@@ -23,7 +23,7 @@ import com.starbase.starteam.DuplicateServerListEntryException;
 import com.starbase.starteam.ServerInfo;
 
 /**
- * @author John McNair <john.mcnair@mckesson.com>
+ * @author John McNair <john@mcnair.org>
  */
 @RunWith(JMock.class)
 public class StarTeamConnectionTest {
