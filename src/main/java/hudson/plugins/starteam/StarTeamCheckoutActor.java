@@ -75,13 +75,11 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		}
 
 		// Get a list of files that require updating
-		Collection<com.starbase.starteam.File> changed_files = connection
-				.findAllFiles(workspace, listener.getLogger());
+		Collection<com.starbase.starteam.File> changedFiles = connection.findAllFiles(workspace, listener.getLogger());
 		// Check 'em out
-		connection.checkOut(changed_files, listener.getLogger());
+		connection.checkOut(changedFiles, listener.getLogger());
 		// TODO: create changelog
 		connection.close();
 		return true;
 	}
-
 }
