@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.jvnet.hudson.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>1.314</version>
+		<version>1.313</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -102,7 +102,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.6</source>
+					<source>1.5</source>
 					<target>1.5</target>
 				</configuration>
 			</plugin>
@@ -122,30 +122,12 @@
 					<xmlOutput>true</xmlOutput>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>emma-maven-plugin</artifactId>
-				<version>1.0-SNAPSHOT</version>
-				<inherited>true</inherited>
-				<executions>
-					<execution>
-						<goals>
-							<goal>instrument</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>emma-maven-plugin</artifactId>
-				<version>1.0-SNAPSHOT</version>
-				<inherited>true</inherited>
-			</plugin>
-		</plugins>
-	</reporting>
+  <scm>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/starteam-0.1.7</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/starteam-0.1.7</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/starteam/tags/starteam-0.1.7</url>
+  </scm>
 </project>
