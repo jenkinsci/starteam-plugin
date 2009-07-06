@@ -1,0 +1,16 @@
+This plugin requires a little extra attention to build.  As far as I can tell,
+Borland does not publish their SDK in a maven repo.  In order to build, you
+need to download the SDK from
+http://www.borland.com/products/downloads/download_starteam.html.
+
+Then:
+
+tar xzvf StarTeamSDK-2008.tar.gz
+cd sdk
+mvn install:install-file -DgroupId=com.borland -DartifactId=starteam104 -Dpackaging=jar -Dversion=10 -Dfile=Lib/starteam104.jar
+mvn install:install-file -DgroupId=com.borland -DartifactId=starteam104-resources -Dpackaging=jar -Dversion=10 -Dfile=Lib/starteam104-resources.jar
+mvn install:install-file -DgroupId=com.smartsockets -DartifactId=ss -Dpackaging=jar -Dversion=1 -Dfile=Lib/ss.jar
+
+After that, the mvn targets should work as you generally expect them to.
+
+
