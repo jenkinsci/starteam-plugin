@@ -12,7 +12,7 @@
 	<groupId>hudson.plugins</groupId>
 	<artifactId>starteam</artifactId>
 	<packaging>hpi</packaging>
-	<version>0.1.7-SNAPSHOT</version>
+	<version>0.1.7</version>
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam+SCM+plugin</url>
 
@@ -33,6 +33,14 @@
 			</roles>
 			<timezone>-5</timezone>
 		</developer>
+		<developer>
+			<name>Chunyang Wang</name>
+			<email>wangchunyang@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+8</timezone>
+		</developer>        
 	</developers>
 
 	<pluginRepositories>
@@ -45,13 +53,13 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam100</artifactId>
+			<artifactId>starteam104</artifactId>
 			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam100-resources</artifactId>
+			<artifactId>starteam104-resources</artifactId>
 			<version>10</version>
 			<scope>provided</scope>
 		</dependency>

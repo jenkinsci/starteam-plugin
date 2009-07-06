@@ -7,8 +7,10 @@ Then:
 
 tar xzvf StarTeamSDK-2008.tar.gz
 cd sdk
-mvn install:install-file -DgroupId=com.borland -DartifactId=starteam100 -Dpackaging=jar -Dversion=10 -Dfile=lib/starteam100.jar
-mvn install:install-file -DgroupId=com.borland -DartifactId=starteam100-resources -Dpackaging=jar -Dversion=10 -Dfile=lib/starteam100-resources.jar
-mvn install:install-file -DgroupId=com.smartsockets -DartifactId=ss -Dpackaging=jar -Dversion=1 -Dfile=lib/ss.jar
+mvn install:install-file -DgroupId=com.borland -DartifactId=starteam104 -Dpackaging=jar -Dversion=10 -Dfile=Lib/starteam104.jar
+mvn install:install-file -DgroupId=com.borland -DartifactId=starteam104-resources -Dpackaging=jar -Dversion=10 -Dfile=Lib/starteam104-resources.jar
+mvn install:install-file -DgroupId=com.smartsockets -DartifactId=ss -Dpackaging=jar -Dversion=1 -Dfile=Lib/ss.jar
 
 After that, the mvn targets should work as you generally expect them to.
+
+
