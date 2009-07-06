@@ -12,7 +12,7 @@
 	<groupId>hudson.plugins</groupId>
 	<artifactId>starteam</artifactId>
 	<packaging>hpi</packaging>
-	<version>0.1.7</version>
+	<version>0.1.8-SNAPSHOT</version>
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam+SCM+plugin</url>
 
@@ -124,10 +124,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-  <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/starteam-0.1.7</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/starteam-0.1.7</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/starteam/tags/starteam-0.1.7</url>
-  </scm>
 </project>
