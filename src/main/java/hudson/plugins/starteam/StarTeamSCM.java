@@ -1,5 +1,6 @@
 package hudson.plugins.starteam;
 
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -30,6 +31,7 @@ public class StarTeamSCM extends SCM {
 	/**
 	 * Singleton descriptor.
 	 */
+	@Extension
 	public static final StarTeamSCMDescriptorImpl DESCRIPTOR = new StarTeamSCMDescriptorImpl();
 
 	private final String user;
@@ -170,7 +172,7 @@ public class StarTeamSCM extends SCM {
 		 * @see hudson.model.Descriptor#configure(org.kohsuke.stapler.StaplerRequest)
 		 */
 		@Override
-		public boolean configure(StaplerRequest req) throws FormException {
+		public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
 			// This is used for the global configuration
 			return true;
 		}
