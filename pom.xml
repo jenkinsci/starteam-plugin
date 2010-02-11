@@ -12,12 +12,13 @@
 	<groupId>hudson.plugins</groupId>
 	<artifactId>starteam</artifactId>
 	<packaging>hpi</packaging>
-	<version>0.1.8-SNAPSHOT</version>
+	<version>0.2-SNAPSHOT</version>
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
 
 	<developers>
 		<developer>
+			<id>ilkka</id>
 			<name>Ilkka Laukkanen</name>
 			<email>ilkka.s.laukkanen@gmail.com</email>
 			<roles>
@@ -34,6 +35,7 @@
 			<timezone>-5</timezone>
 		</developer>
 		<developer>
+			<id>chunyang</id>
 			<name>Chunyang Wang</name>
 			<email>wangchunyang@gmail.com</email>
 			<roles>
