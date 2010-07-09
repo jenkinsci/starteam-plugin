@@ -9,6 +9,7 @@ import hudson.remoting.VirtualChannel;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Date;
 
 /**
@@ -77,7 +78,13 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 			connection.close();
 			return false;
 		}
-		if (connection.findChangedFiles(f, listener.getLogger(), sinceDate)
+		PrintStream logger;
+		if (listener != null ) {
+			logger = listener.getLogger();
+		} else {
+			logger = System.out;
+		}
+		if (connection.findChangedFiles(f, logger, sinceDate)
 				.isEmpty()) {
 			connection.close();
 			return false;
