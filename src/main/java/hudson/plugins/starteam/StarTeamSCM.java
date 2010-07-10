@@ -48,7 +48,7 @@ public class StarTeamSCM extends SCM {
 	/**
 	 * The constructor.
 	 * 
-	 * @stapler-constructor
+	 * {@stapler-constructor}
 	 */
 	@DataBoundConstructor
 	public StarTeamSCM(String hostname, int port, String projectname,

@@ -174,7 +174,7 @@ public class StarTeamConnection implements Serializable {
 	/**
 	 * @param server
 	 * @param projectname
-	 * @return
+	 * @return Project specified by the projectname
 	 * @throws StarTeamSCMException
 	 */
 	static Project findProjectOnServer(final Server server, final String projectname) throws StarTeamSCMException {
