@@ -1,0 +1,30 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+	xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form">
+	<!--
+		This jelly script is used for per-project configuration.
+		
+		See global.jelly for a general discussion about jelly script.
+	-->
+	<f:entry title="Hostname" help="/plugin/starteam/help/sthostname.html">
+		<f:textbox name="starteam.hostname" value="${scm.hostname}" />
+	</f:entry>
+	<f:entry title="Port">
+		<f:textbox name="starteam.port" value="${scm.port}" />
+	</f:entry>
+	<f:entry title="Project name">
+		<f:textbox name="starteam.projectname" value="${scm.projectname}" />
+	</f:entry>
+	<f:entry title="View name">
+		<f:textbox name="starteam.viewname" value="${scm.viewname}" />
+	</f:entry>
+	<f:entry title="Folder name">
+		<f:textbox name="starteam.foldername" value="${scm.foldername}" />
+	</f:entry>
+	<f:entry title="Username">
+		<f:textbox name="starteam.username" value="${scm.username}" />
+	</f:entry>
+	<f:entry title="Password">
+		<input type="password" name="starteam.password" class="setting-input" value="${scm.password}" />
+	</f:entry>
+</j:jelly>
