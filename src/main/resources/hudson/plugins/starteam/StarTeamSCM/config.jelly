@@ -25,6 +25,6 @@
 		<f:textbox name="starteam.username" value="${scm.username}" />
 	</f:entry>
 	<f:entry title="Password">
-		<input type="password" name="starteam.password" class="setting-input" value="${scm.password}" />
+		<f:password name="starteam.password" value="${scm.password}" />
 	</f:entry>
 </j:jelly>
