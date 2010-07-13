@@ -15,6 +15,7 @@
 	<version>0.5-SNAPSHOT</version>
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
+	<inceptionYear>2007</inceptionYear>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
