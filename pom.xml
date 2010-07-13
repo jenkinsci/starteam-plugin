@@ -16,21 +16,27 @@
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
 
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+	</properties>
+
 	<developers>
 		<developer>
 			<id>ilkka</id>
 			<name>Ilkka Laukkanen</name>
 			<email>ilkka.s.laukkanen@gmail.com</email>
 			<roles>
-				<role>Developer</role>
+				<role>Developer Emeritus</role>
 			</roles>
 			<timezone>2</timezone>
 		</developer>
 		<developer>
+			<id>pamdirac</id>
 			<name>John McNair</name>
 			<email>john@mcnair.org</email>
 			<roles>
-				<role>Developer</role>
+				<role>Developer Emeritus</role>
 			</roles>
 			<timezone>-5</timezone>
 		</developer>
@@ -44,15 +50,37 @@
 			<timezone>+8</timezone>
 		</developer>        
 		<developer>
+			<id>jan_ruzicka</id>
 			<name>Jan Ruzicka</name>
-			<email>jan_ruzicka at dev dot java dot net</email>
+			<email>jan_ruzicka@dev.java.net</email>
 			<roles>
 				<role>Developer</role>
 			</roles>
 			<timezone>-5</timezone>
 		</developer>
 	</developers>
-
+	<contributors>
+		<contributor>
+			<name>Eric Broyles</name>
+			<email>javamate@gmail.com </email>
+			<timezone>0</timezone>
+		</contributor>
+		<contributor>
+			<name>Timothy Twelves</name>
+			<email>tim12s@yahoo.com</email>
+			<timezone>2</timezone>
+		</contributor>
+		<contributor>
+			<name>Nick Redshaw</name>
+		</contributor>
+		<contributor>
+			<name>Steve Favez</name>
+		</contributor>
+		<contributor>
+			<name>David Silk</name>
+			<email>dsilk@verisign.com</email>
+		</contributor>
+	</contributors>
 	<pluginRepositories>
 		<pluginRepository>
 			<id>snapshots.repository.codehaus.org</id>
@@ -118,8 +146,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.5</source>
-					<target>1.5</target>
+					<source>1.6</source>
+					<target>1.6</target>
 				</configuration>
 			</plugin>
 			<plugin>
