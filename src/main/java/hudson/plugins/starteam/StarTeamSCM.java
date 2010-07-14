@@ -172,7 +172,6 @@ public class StarTeamSCM extends SCM {
 	 * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
 	 * 
 	 */
-	@Extension
 	public static final class StarTeamSCMDescriptorImpl extends SCMDescriptor<StarTeamSCM> {
 
 		private final Collection<StarTeamSCM> scms = new ArrayList<StarTeamSCM>();
