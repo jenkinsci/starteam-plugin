@@ -92,8 +92,9 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 * @see hudson.scm.SCM#getDescriptor()
 	 */
 	@Test
-	public void getDescriptor() {
-		SCMDescriptor d=t.getDescriptor();
+	public void testGetDescriptor() {
+		SCMDescriptor<StarTeamSCM> d=t.getDescriptor();
+		assertNotNull(d);
 		assertSame(StarTeamSCM.DESCRIPTOR,d);
 	}
     /*
@@ -103,7 +104,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 *      hudson.Launcher, hudson.FilePath, hudson.model.TaskListener)
 	 */
 	@Test
-	public void pollChanges() throws IOException, InterruptedException, ReactorException {
+	public void testPollChanges() throws IOException, InterruptedException, ReactorException {
 		
 		FreeStyleProject proj = createFreeStyleProject();
 		proj.setScm(t);

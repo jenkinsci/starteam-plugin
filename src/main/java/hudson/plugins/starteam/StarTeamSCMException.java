@@ -10,6 +10,11 @@ package hudson.plugins.starteam;
 public class StarTeamSCMException extends Exception {
 
 	/**
+	 * serial version id
+	 */
+	private static final long serialVersionUID = 53829064700557888L;
+
+	/**
 	 * @param message
 	 * @param cause
 	 */

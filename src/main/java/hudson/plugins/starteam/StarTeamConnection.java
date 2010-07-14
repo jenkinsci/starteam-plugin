@@ -1,3 +1,6 @@
+/**
+ *
+ */
 package hudson.plugins.starteam;
 
 import java.io.IOException;
@@ -18,8 +21,10 @@ import com.starbase.starteam.Project;
 import com.starbase.starteam.PropertyNames;
 import com.starbase.starteam.Server;
 import com.starbase.starteam.ServerConfiguration;
+import com.starbase.starteam.ServerAdministration;
 import com.starbase.starteam.ServerInfo;
 import com.starbase.starteam.Status;
+import com.starbase.starteam.UserAccount;
 import com.starbase.starteam.View;
 import com.starbase.starteam.ViewConfiguration;
 import com.starbase.util.OLEDate;
@@ -28,7 +33,13 @@ import com.starbase.util.OLEDate;
  * StarTeamActor is a class that implements connecting to a StarTeam repository,
  * to a given project, view and folder.
  * 
+ * Add functionality allowing to delete non starteam file in folder while
+ * performing listing of all files. and to perform creation of changelog file
+ * during the checkout
+ *
  * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
+ * @author Steve Favez <sfavez@verisign.com>
+ *
  */
 public class StarTeamConnection implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -45,15 +56,25 @@ public class StarTeamConnection implements Serializable {
 	private transient View view;
 	private transient Folder rootFolder;
 	private transient Project project;
+	private transient ServerAdministration srvAdmin;
 
 	/**
+	 * Default constructor
+	 *
 	 * @param hostName
+	 *            the starteam server host / ip name
 	 * @param port
+	 *            starteam server port
 	 * @param userName
+	 *            user used to connect starteam server
 	 * @param password
+	 *            user password to connect to starteam server
 	 * @param projectName
+	 *            starteam project's name
 	 * @param viewName
+	 *            starteam view's name
 	 * @param folderName
+	 *            starteam folder's name
 	 */
 	public StarTeamConnection(String hostName, int port, String userName, String password, String projectName, String viewName, String folderName) {
 		checkParameters(hostName, port, userName, password, projectName, viewName, folderName);
@@ -77,6 +98,11 @@ public class StarTeamConnection implements Serializable {
 		return serverInfo;
 	}
 
+	/**
+	 * populate the description of the server info.
+	 *
+	 * @param serverInfo
+	 */
 	void populateDescription(ServerInfo serverInfo) {
 		// Increment a counter until the description is unique
 		int counter = 0;
@@ -139,6 +165,8 @@ public class StarTeamConnection implements Serializable {
 	}
 
 	/**
+	 * checkout the files from starteam
+	 *
 	 * @param filesToCheckOut
 	 * @throws IOException if checkout fails.
 	 */
@@ -149,26 +177,84 @@ public class StarTeamConnection implements Serializable {
 				case Status.MERGE:
 				case Status.MODIFIED:
 				case Status.UNKNOWN:
+				case Status.NEW:
 					// clobber these
 					new java.io.File(f.getFullName()).delete();
+				logger.println("[co] Deleted File: " + f.getFullName());
 					break;
 				case Status.MISSING:
 				case Status.OUTOFDATE:
-					// just go on an check out
+					// just go on and check out
 					break;
 				default:
 					// By default do nothing, go to next iteration
 					continue;
 			}
-			logger.print("[co] " + f.getFullName() + "... ");
+			logger.print("[co] " + f.getFullName() + "... \n");
 			f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
-					false, // use timestamp from repo
+					true, // use timestamp from local time
 					true, // convert EOL to native format
 					true); // update status
 			f.discard();
 			logger.println("ok");
 		}
 		logger.println("*** done");
+	}
+
+	/**
+	 * Returns the name of the user on the StarTeam server with the specified
+	 * id. StarTeam stores user IDs as int values and this method will translate
+	 * those into the actual user name. <br/> This can be used, for example,
+	 * with a StarTeam {@link Item}'s {@link Item#getModifiedBy()} property, to
+	 * determine the name of the user who made a modification to the item.
+	 *
+	 * @param userId
+	 *            the id of the user on the StarTeam Server
+	 * @return the name of the user as provided by the StarTeam Server
+	 */
+	public String getUsername(int userId) {
+		boolean canReadUserAccts = true;
+		String userName = server.getUser(userId).getName();
+		srvAdmin = server.getAdministration();
+		UserAccount[] userAccts = null;
+		try {
+			userAccts = srvAdmin.getUserAccounts();
+		} catch (Exception e) {
+			System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
+			System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
+			System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
+			canReadUserAccts = false;
+		}
+		if (canReadUserAccts) {
+			UserAccount ua = userAccts[0];
+			for (int i=0; i<userAccts.length; i++) {
+				ua = userAccts[i];
+				if (ua.getName().equals(userName)) {
+					System.out.println("INFO: From \'" + userName + "\' found existing user LogonName = " +
+							ua.getLogOnName() + " with ID \'" + ua.getID() + "\' and email \'" + ua.getEmailAddress() +"\'");
+					return ua.getLogOnName();
+				}
+			}
+		} else {
+			// Since the user account running the build does not have user admin perms
+			// Build the base email name from the User Full Name
+			String shortname = server.getUser(userId).getName();
+			if (shortname.indexOf(",")>0) {
+			shortname = shortname.charAt((shortname.indexOf(" ")+1))+ shortname.substring(0, shortname.indexOf(","));
+			} else {
+				// check for a space and assume "firstname lastname"
+				if (shortname.indexOf(" ")>0) {
+					shortname = shortname.charAt(1) + shortname.substring((shortname.indexOf(" ")+1),shortname.length());
+
+				}  // otherwise, do nothing, just return the name we have.
+			}
+			return shortname;
+		}
+		return "unknown";
+	}
+
+	public OLEDate getServerTime() {
+		return server.getCurrentTime();
 	}
 
 	/**
@@ -202,23 +288,38 @@ public class StarTeamConnection implements Serializable {
 	}
 
 	/**
-	 * List all files in a given folder.
+	 * List all files in a given folder, create local subfolders if necessary,
+	 * and delete all local files that are not in starteam (deleted or moved) if
+	 * clearNoStarteamFiles is set to true.
 	 * 
-	 * @param folder The folder
+	 * @param folder
+	 *            The folder
+	 * @param clearNoStarteamFiles
+	 *            Whether or not to clear folder from file that are not in
+	 *            starteam.
 	 * @return a Map of Files, keyed on full pathname.
 	 */
-	private Map<String, File> listAllFiles(Folder folder, PrintStream logger) {
+	private Map<String, File> listAllFiles(Folder folder, PrintStream logger, boolean clearNoStarteamFiles) {
 		logger.println("*** Looking for versioned files in " + folder.getName());
 		Map<String, File> files = new HashMap<String, File>();
 		// If working directory doesn't exist, create it
 		java.io.File workdir = new java.io.File(folder.getPath());
 		if (!workdir.exists()) {
-			logger.println("*** Creating working directory: " + workdir.getAbsolutePath());
-			workdir.mkdirs();
+			boolean success = workdir.mkdirs();
+			if ( !success ) {
+				logger.println("*** Creation of working directory failed : "
+						+ workdir.getAbsolutePath());
+			} else {
+				logger.println("*** Creation of working directory suceeded : "
+						+ workdir.getAbsolutePath());
+			}
 		}
+		// list of all starteam files and folder names in the current folder
+		List<String> starteamFilesInDirectory = new ArrayList<String>();
 		// call for subfolders
 		for (Folder f : folder.getSubFolders()) {
-			files.putAll(listAllFiles(f, logger));
+			starteamFilesInDirectory.add(f.getName());
+			files.putAll(listAllFiles(f, logger, clearNoStarteamFiles));
 		}
 		// find items in this folder
 		for (Item i : folder.getItems(folder.getView().getProject().getServer().getTypeNames().FILE)) {
@@ -226,12 +327,65 @@ public class StarTeamConnection implements Serializable {
 			try {
 				// This sometimes throws... deep inside starteam =(
 				files.put(f.getParentFolderHierarchy() + f.getName(), f);
+				starteamFilesInDirectory.add(f.getName());
 			} catch (RuntimeException e) {
 				logger.println("Exception in listAllFiles: " + e.getLocalizedMessage());
 			}
 		}
+		// clear local files and directory that are not in starteam.
+		if (clearNoStarteamFiles) {
+			clearCurrentDirectoryOfNonStarteamFiles(starteamFilesInDirectory,
+					workdir);
+		}
 		folder.discard();
 		return files;
+	}
+
+	/**
+	 * clear directory of non starteam files (and delete non starteam folder
+	 * also)
+	 *
+	 * @param starteamFiles
+	 *            list of starteam files / directories names
+	 * @param workingDirectory
+	 *            local working directory
+	 */
+	private void clearCurrentDirectoryOfNonStarteamFiles(
+			List<String> starteamFiles, java.io.File workingDirectory) {
+
+		//pre-condition : if one of the param is null, or workingDirectory is not a directory, then return
+		if ( (starteamFiles == null) || (workingDirectory == null) || !(workingDirectory.isDirectory()) ) {
+			return ;
+		}
+
+		// find existing files in the current folder
+		java.io.File[] filesInFolder = workingDirectory.listFiles();
+		// check that all files in the current directory are in starteam
+		for (java.io.File currentFile : filesInFolder) {
+			// if starteam files doesn't contains one of the given file name,
+			// remove it
+			if (!starteamFiles.contains(currentFile.getName())) {
+				deleteFileOrDirectory(currentFile);
+			}
+
+		}
+	}
+
+	/**
+	 * recursive methods allowing to delete recursively directory or file
+	 *
+	 * @param aFileOrDirectory
+	 *            the file or directory to delete (recursively)
+	 */
+	private void deleteFileOrDirectory(java.io.File aFileOrDirectory) {
+		if (aFileOrDirectory.isDirectory()) {
+			// delete all chidren files and directories.
+			java.io.File[] childrens = aFileOrDirectory.listFiles();
+			for (java.io.File currentFile : childrens) {
+				deleteFileOrDirectory(currentFile);
+			}
+		}
+		aFileOrDirectory.delete();
 	}
 
 	/**
@@ -280,7 +434,7 @@ public class StarTeamConnection implements Serializable {
 		// as changes too.
 		for (Map.Entry<String, File> e : thenFiles.entrySet()) {
 			logger.println("[deleted] " + e.getValue().getFullName());
-			files.add(e.getValue());
+			files.add((File) e.getValue());
 		}
 
 		return files;
@@ -318,7 +472,7 @@ public class StarTeamConnection implements Serializable {
 	 * 
 	 * @param folder the folder whose children to check
 	 * @param thefolder the folder to look for
-	 * @return
+	 * @return found folder
 	 */
 	private Folder findFolderRecursively(Folder folder, java.io.File thefolder) {
 		// Check subfolders, breadth first. checkLater is a collection
@@ -347,26 +501,73 @@ public class StarTeamConnection implements Serializable {
 		return null;
 	}
 
-	public Collection<File> findAllFiles(java.io.File workspace, PrintStream logger) {
+	/**
+	 * return the list of all files for the current starteam connection.
+	 *
+	 * @param workspace
+	 *            root of local folder
+	 * @param logger
+	 *            logger used to log events
+	 * @param clearNoStarteamFiles
+	 *            whether or not deleting local file / directory that are not in
+	 *            starteam.
+	 * @return a map containing full file name and the corresponding starteam
+	 *         object file.
+	 */
+	public Map<String, File> findAllFiles(java.io.File workspace,
+			PrintStream logger, boolean clearNoStarteamFiles) {
 		logger.println("*** Get list of all files for " + workspace);
 
 		// set root folder
 		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
 
 		// Get a list of all files
-		Map<String, File> nowFiles = listAllFiles(rootFolder, logger);
+		Map<String, File> nowFiles = listAllFiles(rootFolder, logger,
+				clearNoStarteamFiles);
 
 		logger.println("*** done");
-		return nowFiles.values();
+		return nowFiles;
 	}
 
 	/**
+	 * find all changed files in starteam since a given date. this method create
+	 * a list of all current files. and then call the overloaded method with a
+	 * list of current files.
+	 *
 	 * @param workspace
+	 *            local root directory.
 	 * @param logger
+	 *            logger allowing to log event to the console.
 	 * @param fromDate
-	 * @return
+	 *            date of comparison.
+	 * @return collection of modified starteam files.
 	 */
 	public Collection<File> findChangedFiles(java.io.File workspace, PrintStream logger, Date fromDate) {
+		boolean clearNoStarteamFiles = false;
+		// set root folder
+		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
+		// Get a list of all files
+		logger.println("Fetching current files:");
+		Map<String, File> nowFiles = listAllFiles(rootFolder, logger,
+				clearNoStarteamFiles);
+		return findChangedFiles(nowFiles, workspace, logger, fromDate);
+	}
+
+	/**
+	 * Find all changed files in starteam since a given date.
+	 *
+	 * @param nowFiles
+	 *            list of all current starteam files.
+	 * @param workspace
+	 *            local root directory.
+	 * @param logger
+	 *            logger allowing to log event to the console.
+	 * @param fromDate
+	 *            date of comparison.
+	 * @return collection of modified starteam files.
+	 */
+	public Collection<File> findChangedFiles(Map<String, File> nowFiles, java.io.File workspace, PrintStream logger, Date fromDate) {
+		boolean clearNoStarteamFiles = false;
 		logger.println("*** Looking for changed files since " + fromDate);
 		// set root folder
 		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
@@ -378,18 +579,13 @@ public class StarTeamConnection implements Serializable {
 		// This list will contain the changed files
 		Collection<File> changedFiles = null;
 
-		// Get a list of all files
-		logger.println("Fetching current files:");
-		Map<String, File> nowFiles = listAllFiles(rootFolder, logger);
-		logger.println("done");
-
 		Folder sinceFolder = null;
 		Map<String, File> sinceFiles = null;
 		try {
 			sinceFolder = findFolderInView(sinceView, folderName);
 			sinceFolder.setAlternatePathFragment(workspace.getAbsolutePath());
 			logger.println("Fetching files at " + fromDate);
-			sinceFiles = listAllFiles(sinceFolder, logger);
+			sinceFiles = listAllFiles(sinceFolder, logger, clearNoStarteamFiles);
 			logger.println("done");
 			logger.println("Comparing");
 			changedFiles = getFileSetDifferences(sinceFiles, nowFiles, logger);
@@ -402,6 +598,28 @@ public class StarTeamConnection implements Serializable {
 
 		logger.println("*** done");
 		return changedFiles;
+	}
+
+	/**
+	 * synchronize last build date with starteam server timezone.
+	 *
+	 * @param aPreviousBuildDate
+	 *            the previous Hudson's build date.
+	 * @param aCurrentBuildDate
+	 *            hudson's current build date
+	 * @return corresponding starteam previous build date.
+	 */
+	public Date calculatePreviousDateWithTimeZoneCheck(Date aPreviousBuildDate,
+			Date aCurrentBuildDate) {
+		OLEDate starteamServerTime = getServerTime();
+		long starteamDateLongValue = starteamServerTime.getLongValue();
+		long buildServerDateLongValue = aCurrentBuildDate.getTime();
+		// time diff between starteam server and current server
+		long timeDiff = starteamDateLongValue - buildServerDateLongValue;
+		long lastBuildDateLongValue = aPreviousBuildDate.getTime();
+		long lastStarteamDateLongValue = timeDiff + lastBuildDateLongValue;
+		Date synchLastBuildDate = new Date(lastStarteamDateLongValue);
+		return synchLastBuildDate;
 	}
 
 	/**
