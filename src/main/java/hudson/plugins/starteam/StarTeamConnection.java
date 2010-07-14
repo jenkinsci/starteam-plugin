@@ -24,6 +24,7 @@ import com.starbase.starteam.ServerConfiguration;
 import com.starbase.starteam.ServerAdministration;
 import com.starbase.starteam.ServerInfo;
 import com.starbase.starteam.Status;
+import com.starbase.starteam.User;
 import com.starbase.starteam.UserAccount;
 import com.starbase.starteam.View;
 import com.starbase.starteam.ViewConfiguration;
@@ -214,7 +215,8 @@ public class StarTeamConnection implements Serializable {
 	 */
 	public String getUsername(int userId) {
 		boolean canReadUserAccts = true;
-		String userName = server.getUser(userId).getName();
+		User stUser = server.getUser(userId);
+		String userName =stUser.getName();
 		srvAdmin = server.getAdministration();
 		UserAccount[] userAccts = null;
 		try {
@@ -240,11 +242,12 @@ public class StarTeamConnection implements Serializable {
 			// Build the base email name from the User Full Name
 			String shortname = server.getUser(userId).getName();
 			if (shortname.indexOf(",")>0) {
-			shortname = shortname.charAt((shortname.indexOf(" ")+1))+ shortname.substring(0, shortname.indexOf(","));
+				// check for a space and assume "lastname, firstname"
+				shortname = shortname.charAt((shortname.indexOf(" ")+1))+ shortname.substring(0, shortname.indexOf(","));
 			} else {
 				// check for a space and assume "firstname lastname"
 				if (shortname.indexOf(" ")>0) {
-					shortname = shortname.charAt(1) + shortname.substring((shortname.indexOf(" ")+1),shortname.length());
+					shortname = shortname.charAt(0) + shortname.substring((shortname.indexOf(" ")+1),shortname.length());
 
 				}  // otherwise, do nothing, just return the name we have.
 			}
