@@ -83,7 +83,7 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
 							"revisionNumber").getStringValue()));
 
 				if (node.selectSingleNode("date") != null)
-					change.setDate(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss")
+					change.setDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 							.parse(node.selectSingleNode("date")
 									.getStringValue()));
 

@@ -40,6 +40,9 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 	public User getAuthor() {
 		return User.get(username);
 	}
+	public String getUsername() {
+		return username;
+	}
 
 	public void setUsername(String aUsername) {
 		this.username = aUsername;
