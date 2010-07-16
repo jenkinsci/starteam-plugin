@@ -39,13 +39,13 @@ public class StarteamConnectionIntegrationTest {
 	@Before
 	public void setUp() throws StarTeamSCMException {
 		//initialise the starteam connection
-		String hostName = "10.170.12.246";
-		int port = 55201;
-		String projectName = "NGBL";
-		String viewName = "NGBL";
-		String folderName = "NGBL/source/ant";
-		String userName = "";
-		String password = "";
+		String hostName = System.getProperty("test.starteam.hostname", "10.170.12.246");
+		int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "55201")); 
+		String projectName = System.getProperty("test.starteam.projectname", "NGBL");
+		String viewName = System.getProperty("test.starteam.viewname", "NGBL");
+		String folderName = System.getProperty("test.starteam.foldername", "NGBL/source/ant");
+		String userName = System.getProperty("test.starteam.username", "");
+		String password = System.getProperty("test.starteam.password", "");
 
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName ) ;
 		starTeamConnection.initialize() ;

@@ -27,18 +27,18 @@ import org.jvnet.hudson.test.HudsonTestCase;
 public class StarTeamSCMTest extends HudsonTestCase {
 
 	StarTeamSCM t;
-	String hostname = "127.0.0.1";
-	int port = 1 ; 
-	String projectname = "";
-	String viewname = "";
-	String foldername = "";
-	String username = "";
-	String password = "";
-	
+	String hostName = System.getProperty("test.starteam.hostname", "127.0.0.1");
+	int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "1")) ; 
+	String projectName = System.getProperty("test.starteam.projectname", "");
+	String viewName = System.getProperty("test.starteam.viewname", "");
+	String folderName = System.getProperty("test.starteam.foldername", "");
+	String userName = System.getProperty("test.starteam.username", "");
+	String password = System.getProperty("test.starteam.password", "");
+
 	@Before
 	public void setUp() throws Exception {
 		super.setUp();
-		t = new StarTeamSCM(hostname, port, projectname, viewname, foldername, username, password) ;
+		t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password) ;
 	}
 		
 	/**
@@ -47,13 +47,13 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Test
 	public void testConstructorStarTeamSCM()
 	{
-			StarTeamSCM t = new StarTeamSCM(hostname, port, projectname, viewname, foldername, username, password) ;
-			assertEquals(hostname,t.getHostname());
+			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password) ;
+			assertEquals(hostName,t.getHostname());
 			assertEquals(port,t.getPort());
-			assertEquals(projectname,t.getProjectname());
-			assertEquals(viewname,t.getViewname());
-			assertEquals(foldername,t.getFoldername());
-			assertEquals(username,t.getUsername());
+			assertEquals(projectName,t.getProjectname());
+			assertEquals(viewName,t.getViewname());
+			assertEquals(folderName,t.getFoldername());
+			assertEquals(userName,t.getUsername());
 			assertEquals(password,t.getPassword());
 	}
     /**
@@ -63,7 +63,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Test
     public void testConfigRoundtrip() throws Exception {
         FreeStyleProject project = createFreeStyleProject();
-        StarTeamSCM scm = new StarTeamSCM(hostname, port, projectname, viewname, foldername, username, password) ;
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password) ;
         project.setScm(scm);
 
         // config roundtrip
@@ -123,7 +123,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 */
 	@Test
 	public void testGetHostname() {
-		assertEquals(hostname,t.getHostname());
+		assertEquals(hostName,t.getHostname());
 	}
 
 	/*
@@ -143,7 +143,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 */
 	@Test
 	public void testGetProjectname() {
-		assertEquals(projectname, t.getProjectname());
+		assertEquals(projectName, t.getProjectname());
 	}
 
 	/*
@@ -153,7 +153,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 */
 	@Test
 	public void testGetViewname() {
-		assertEquals(viewname,t.getViewname());
+		assertEquals(viewName,t.getViewname());
 	}
 
 	/*
@@ -163,7 +163,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 */
 	@Test
 	public void testGetFoldername() {
-		assertEquals(foldername,t.getFoldername());
+		assertEquals(folderName,t.getFoldername());
 	}
 
 	/*
@@ -173,7 +173,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 */
 	@Test
 	public void testGetUsername() {
-		assertEquals(username,t.getUsername());
+		assertEquals(userName,t.getUsername());
 	}
 
 	/*

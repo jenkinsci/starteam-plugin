@@ -156,6 +156,25 @@
 				<version>2.4.3</version>
 				<configuration>
 					<forkMode>always</forkMode>
+					<!--  <systemPropertyVariables>
+						<buildDirectory>${project.build.directory}</buildDirectory>
+						<test.starteam.hostname>${test.starteam.hostname}</test.starteam.hostname>
+						<test.starteam.hostport>${test.starteam.hostport}</test.starteam.hostport>
+						<test.starteam.projectname>${test.starteam.projectname}</test.starteam.projectname>
+						<test.starteam.viewname>${test.starteam.viewname}</test.starteam.viewname>
+						<test.starteam.foldername>${test.starteam.foldername}</test.starteam.foldername>
+						<test.starteam.username>${test.starteam.username}</test.starteam.username>
+						<test.starteam.password>${test.starteam.password}</test.starteam.password>
+					</systemPropertyVariables> -->
+					<systemProperties>
+						<property><name>test.starteam.hostname</name>   <value>${test.starteam.hostname}</value></property>
+						<property><name>test.starteam.hostport</name>   <value>${test.starteam.hostport}</value></property>
+						<property><name>test.starteam.projectname</name><value>${test.starteam.projectname}</value></property>
+						<property><name>test.starteam.viewname</name>   <value>${test.starteam.viewname}</value></property>
+						<property><name>test.starteam.foldername</name> <value>${test.starteam.foldername}</value></property>
+						<property><name>test.starteam.username</name>   <value>${test.starteam.username}</value></property>
+						<property><name>test.starteam.password</name>   <value>${test.starteam.password}</value></property>
+					</systemProperties>
 				</configuration>
 			</plugin>
 			<plugin>
