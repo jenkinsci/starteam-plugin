@@ -48,7 +48,7 @@ public class StarTeamChangeLogSet extends ChangeLogSet<StarTeamChangeLogEntry> {
 	/**
 	 * Return the history for this change log set.
 	 * 
-	 * @return
+	 * @return a List of all log entries
 	 */
 	public List<StarTeamChangeLogEntry> getHistory() {
 		return history;
