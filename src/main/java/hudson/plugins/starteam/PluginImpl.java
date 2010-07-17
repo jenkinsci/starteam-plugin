@@ -7,7 +7,6 @@ import hudson.Plugin;
  * 
  * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
  * @author Steve Favez <sfavez@verisign.com>
- * @plugin
  */
 public class PluginImpl extends Plugin {
 	/*

@@ -1,14 +1,13 @@
 package hudson.plugins.starteam;
 
 import hudson.model.User;
-import hudson.scm.ChangeLogSet;
 
 import java.util.Collection;
 import java.util.Date;
 
 /**
  * <p>
- * Implementation of {@link ChangeLogSet.Entry} for StarTeam SCM.
+ * Implementation of {@link hudson.scm.ChangeLogSet.Entry} for StarTeam SCM.
  * </p>
  * 
  * @author Eric D. Broyles
