@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
@@ -56,6 +57,13 @@ public final class StarTeamChangeLogBuilder {
 	public static boolean writeChangeLog(OutputStream aOutputStream,
 			Collection<File> aChanges, StarTeamConnection aConnection)
 			throws IOException {
+
+		GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
+		
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
+	    dateFormat.setCalendar(cal);
+	    dateFormat.setLenient(false);
+		
 		OutputStreamWriter writer = new OutputStreamWriter(aOutputStream,
 				Charset.forName("UTF-8"));
 		
@@ -68,9 +76,9 @@ public final class StarTeamChangeLogBuilder {
 			printwriter.println("\t\t<fileName>" + change.getName() + "</fileName>");
 			printwriter.println("\t\t<revisionNumber>" + change.getContentVersion()
 					+ "</revisionNumber>");
+			java.util.Date aDate = change.getModifiedTime().createDate();
 			printwriter.println("\t\t<date>"
-					+ Util.xmlEscape(javaDateToStringDate(change
-							.getModifiedTime().createDate())) + "</date>");
+					+ Util.xmlEscape(dateFormat.format(aDate)) + "</date>");
 			printwriter.println("\t\t<message>"
 					+ Util.xmlEscape(change.getComment()) + "</message>");
 			printwriter.println("\t\t<user>"
@@ -81,43 +89,5 @@ public final class StarTeamChangeLogBuilder {
 		printwriter.println("</changelog>");
 		printwriter.close();
 		return true;
-	}
-
-	/**
-	 * This takes a java.util.Date and converts it to a string.
-	 * @param aDate
-	 * 		the date to convert
-	 * @return A string representation of the date
-	 * @author Mike Wille
-	 */
-	public static String javaDateToStringDate(java.util.Date aDate) {
-		if (aDate == null)
-			return "";
-
-		GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
-		cal.clear();
-		cal.setTime(aDate);
-
-		int year = cal.get(Calendar.YEAR);
-		int month = cal.get(Calendar.MONTH) + 1;
-		int day = cal.get(Calendar.DAY_OF_MONTH);
-
-		int hour = cal.get(Calendar.HOUR_OF_DAY);
-		int min = cal.get(Calendar.MINUTE);
-		int sec = cal.get(Calendar.SECOND);
-
-		String date = year + "-" + putZero(month) + "-" + putZero(day);
-		if (hour + min + sec > 0)
-			date += " " + putZero(hour) + ":" + putZero(min) + ":"
-					+ putZero(sec);
-
-		return date;
-	}
-
-	private static String putZero(int aIndex) {
-		if (aIndex < 10) {
-			return "0" + aIndex;
-		}
-		return aIndex + "";
 	}
 }
