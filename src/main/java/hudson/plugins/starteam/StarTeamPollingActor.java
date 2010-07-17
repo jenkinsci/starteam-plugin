@@ -12,11 +12,10 @@ import java.io.IOException;
 import java.util.Date;
 
 /**
- * @author ip90568
- * 
  * This Actor class allow to check for changes in starteam repository between
  * builds.
  * 
+ * @author ip90568
  * @author Steve Favez <sfavez@verisign.com>
  * 
  */
