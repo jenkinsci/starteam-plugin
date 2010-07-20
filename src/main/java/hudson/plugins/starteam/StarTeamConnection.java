@@ -419,7 +419,7 @@ public class StarTeamConnection implements Serializable {
 					files.add(nowFile);
 				} else {
 					// File not modified, discard metadata
-					logger.println("[hit] " + nowFile.getFullName());
+					//logger.println("[hit] " + nowFile.getFullName());
 					nowFile.discard();
 				}
 				// discard and remove from "then" files
