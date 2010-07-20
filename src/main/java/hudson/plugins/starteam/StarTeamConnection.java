@@ -197,9 +197,9 @@ public class StarTeamConnection implements Serializable {
 					true, // convert EOL to native format
 					true); // update status
 			f.discard();
-			logger.println("ok");
+			// logger.println("ok");
 		}
-		logger.println("*** done");
+		// logger.println("*** done");
 	}
 
 	/**
@@ -303,7 +303,7 @@ public class StarTeamConnection implements Serializable {
 	 * @return a Map of Files, keyed on full pathname.
 	 */
 	private Map<String, File> listAllFiles(Folder folder, PrintStream logger, boolean clearNoStarteamFiles) {
-		logger.println("*** Looking for versioned files in " + folder.getName());
+		//logger.println("*** Looking for versioned files in " + folder.getName());
 		Map<String, File> files = new HashMap<String, File>();
 		// If working directory doesn't exist, create it
 		java.io.File workdir = new java.io.File(folder.getPath());
@@ -313,8 +313,8 @@ public class StarTeamConnection implements Serializable {
 				logger.println("*** Creation of working directory failed : "
 						+ workdir.getAbsolutePath());
 			} else {
-				logger.println("*** Creation of working directory suceeded : "
-						+ workdir.getAbsolutePath());
+				//logger.println("*** Creation of working directory suceeded : "
+				//		+ workdir.getAbsolutePath());
 			}
 		}
 		// list of all starteam files and folder names in the current folder
