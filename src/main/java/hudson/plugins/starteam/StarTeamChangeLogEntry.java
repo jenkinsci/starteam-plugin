@@ -2,8 +2,10 @@ package hudson.plugins.starteam;
 
 import hudson.model.User;
 
+import java.awt.List;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 
 /**
  * <p>
@@ -26,8 +28,9 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 
 	@Override
 	public Collection<String> getAffectedPaths() {
-		// TODO Auto-generated method stub
-		return null;
+		Collection<String> list = new LinkedList<String>();
+		list.add(fileName);
+		return list;
 	}
 
 	/**
