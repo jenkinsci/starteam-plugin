@@ -85,9 +85,9 @@ public class StarTeamSCM extends SCM {
 		this.foldername = foldername;
 		this.user = username;
 		this.passwd = password;
-		if (labelname != null)
+		StarTeamViewSelector result = null;
+		if (labelname != null && !labelname.isEmpty())
 		{
-			StarTeamViewSelector result = null;
 			try {
 				if (promotionstate)
 				{
@@ -99,10 +99,8 @@ public class StarTeamSCM extends SCM {
 				e.printStackTrace();
 				result = null;
 			}
-			this.config = result;
-		} else {
-			this.config = null;
 		}
+		this.config = result;
 	}
 
 	/*
