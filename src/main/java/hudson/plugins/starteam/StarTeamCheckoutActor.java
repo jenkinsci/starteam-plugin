@@ -36,13 +36,14 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	private final Date currentBuilddDate;
 	private final FilePath changelog;
 	private final BuildListener listener;
-	private String hostname;
-	private int port;
-	private String user;
-	private String passwd;
-	private String projectname;
-	private String viewname;
-	private String foldername;
+	private final String hostname;
+	private final int port;
+	private final String user;
+	private final String passwd;
+	private final String projectname;
+	private final String viewname;
+	private final String foldername;
+	private final StarTeamViewSelector config;
 
 	/**
 	 * 
@@ -62,6 +63,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 * 		starteam view name
 	 * @param foldername
 	 * 		starteam folder name
+	 * @param config
+	 * 		configuration selector
 	 * @param previousBuildDate
 	 * 		hudson previous build date
 	 * @param currentBuildDate
@@ -73,8 +76,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 */
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, Date previousBuildDate, Date currentBuildDate, FilePath changelogFile,
-			BuildListener listener) {
+			String foldername, StarTeamViewSelector config, Date previousBuildDate, Date currentBuildDate,
+			FilePath changelogFile, BuildListener listener) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -86,6 +89,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		this.currentBuilddDate = currentBuildDate;
 		this.changelog = changelogFile;
 		this.listener = listener;
+		this.config = config;
 	}
 
 	/*
@@ -98,7 +102,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 			throws IOException {
 		StarTeamConnection connection = new StarTeamConnection(
 				hostname, port, user, passwd,
-				projectname, viewname, foldername);
+				projectname, viewname, foldername, config);
 		try {
 			connection.initialize();
 		} catch (StarTeamSCMException e) {

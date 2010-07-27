@@ -14,6 +14,7 @@ import hudson.scm.SCMDescriptor;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -48,6 +49,7 @@ public class StarTeamSCM extends SCM {
 	private final String foldername;
 	private final String hostname;
 	private final int port;
+	private final StarTeamViewSelector config;
 
 	/**
 	 * 
@@ -67,11 +69,15 @@ public class StarTeamSCM extends SCM {
 	 *            the user name required to connect to starteam's server
 	 * @param password
 	 *            password required to connect to starteam's server
+	 * @param labelname
+	 *            label name used for polling view contents
+	 * @param promotionstate 
+	 *            indication if label name is actual label name or a promotion state name
 	 *
 	 */
 	@DataBoundConstructor
 	public StarTeamSCM(String hostname, int port, String projectname,
-			String viewname, String foldername, String username, String password) {
+			String viewname, String foldername, String username, String password, String labelname, boolean promotionstate) {
 		this.hostname = hostname;
 		this.port = port;
 		this.projectname = projectname;
@@ -79,6 +85,24 @@ public class StarTeamSCM extends SCM {
 		this.foldername = foldername;
 		this.user = username;
 		this.passwd = password;
+		if (labelname != null)
+		{
+			StarTeamViewSelector result = null;
+			try {
+				if (promotionstate)
+				{
+					result = new StarTeamViewSelector(labelname,"Promotion");
+				} else {
+					result = new StarTeamViewSelector(labelname,"Label");
+				}
+			} catch (ParseException e) {
+				e.printStackTrace();
+				result = null;
+			}
+			this.config = result;
+		} else {
+			this.config = null;
+		}
 	}
 
 	/*
@@ -102,7 +126,7 @@ public class StarTeamSCM extends SCM {
 		
 		// Create an actor to do the checkout, possibly on a remote machine
 		StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-				port, user, passwd, projectname, viewname, foldername, previousBuildDate, currentBuildDate, changeLogFilePath, listener);
+				port, user, passwd, projectname, viewname, foldername, config, previousBuildDate, currentBuildDate, changeLogFilePath, listener);
 		if (workspace.act(co_actor)) {
 			// change log is written during checkout (only one pass for
 			// comparison)
@@ -156,8 +180,8 @@ public class StarTeamSCM extends SCM {
 		// Create an actor to do the polling, possibly on a remote machine
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
 				user, passwd, projectname, viewname, foldername,
-				sinceDate, currentServerDate,
-				listener);
+				config, sinceDate,
+				currentServerDate, listener);
 		if (workspace.act(p_actor)) {
 			status = true;
 		} else {

@@ -47,7 +47,7 @@ public class StarteamConnectionIntegrationTest {
 		String userName = System.getProperty("test.starteam.username", "");
 		String password = System.getProperty("test.starteam.password", "");
 
-		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName ) ;
+		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, null ) ;
 		starTeamConnection.initialize() ;
 	
 		//create the default folder

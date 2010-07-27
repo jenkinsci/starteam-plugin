@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -72,8 +73,14 @@ public class StarteamCheckoutActorTest {
 		String password = System.getProperty("test.starteam.password", "");
 		
 		FilePath changeLogFilePath = new FilePath( changeLogFile ) ;
+		StarTeamViewSelector config = null;
+		try {
+			config = new StarTeamViewSelector("", "");
+		} catch (ParseException e) {
+			Assert.fail("");
+		}
 		
-		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, aPreviousBuildDate,new Date(), changeLogFilePath, listener) ;
+		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, aPreviousBuildDate, new Date(), changeLogFilePath, listener) ;
 
 		return starTeamCheckoutActor ;
 	}

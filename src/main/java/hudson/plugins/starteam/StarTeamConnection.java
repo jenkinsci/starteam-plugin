@@ -6,6 +6,7 @@ package hudson.plugins.starteam;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -52,13 +53,13 @@ public class StarTeamConnection implements Serializable {
 	private final String projectName;
 	private final String viewName;
 	private final String folderName;
+	private final StarTeamViewSelector configSelector;
 
 	private transient Server server;
 	private transient View view;
 	private transient Folder rootFolder;
 	private transient Project project;
 	private transient ServerAdministration srvAdmin;
-
 	/**
 	 * Default constructor
 	 *
@@ -76,8 +77,11 @@ public class StarTeamConnection implements Serializable {
 	 *            starteam view's name
 	 * @param folderName
 	 *            starteam folder's name
+	 * @param configSelector 
+	 *            configuration selector 
+	 *            in case of checking from label, promotion state or time
 	 */
-	public StarTeamConnection(String hostName, int port, String userName, String password, String projectName, String viewName, String folderName) {
+	public StarTeamConnection(String hostName, int port, String userName, String password, String projectName, String viewName, String folderName, StarTeamViewSelector configSelector) {
 		checkParameters(hostName, port, userName, password, projectName, viewName, folderName);
 		this.hostName = hostName;
 		this.port = port;
@@ -86,6 +90,7 @@ public class StarTeamConnection implements Serializable {
 		this.projectName = projectName;
 		this.viewName = viewName;
 		this.folderName = folderName;
+		this.configSelector = configSelector;
 	}
 
 	private ServerInfo createServerInfo() {
@@ -156,6 +161,14 @@ public class StarTeamConnection implements Serializable {
 
 		project = findProjectOnServer(server, projectName);
 		view = findViewInProject(project, viewName);
+		if (configSelector != null)
+		{
+			try {
+				view = configSelector.configView(view);
+			} catch (ParseException e) {
+				throw new StarTeamSCMException("Could not correctly parse configuration date: " + e.getMessage());
+			}
+		}
 		rootFolder = findFolderInView(view, folderName);
 
 		// Cache some folder data

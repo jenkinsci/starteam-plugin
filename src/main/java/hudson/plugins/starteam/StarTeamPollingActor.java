@@ -46,6 +46,8 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 	private final Date currentDate;
 
+	private final StarTeamViewSelector config;
+
 	/**
 	 * Default constructor.
 	 * @param hostname starteam host name
@@ -55,13 +57,14 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param projectname starteam project name
 	 * @param viewname  starteam view name
 	 * @param foldername starteam parent folder name
+	 * @param config configuration selector
 	 * @param sinceDate starteam last build date
 	 * @param currentDate starteam current date
 	 * @param listener Hudson task listener.
 	 */
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, Date sinceDate, Date currentDate, TaskListener listener) {
+			String foldername, StarTeamViewSelector config, Date sinceDate, Date currentDate, TaskListener listener) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -72,6 +75,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		this.listener = listener;
 		this.sinceDate = sinceDate;
 		this.currentDate = currentDate;
+		this.config = config;
 	}
 
 	/*
@@ -88,7 +92,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 		StarTeamConnection connection = new StarTeamConnection(
 				hostname, port, user, passwd,
-				projectname, viewname, foldername);
+				projectname, viewname, foldername, config);
 		try {
 			connection.initialize();
 		} catch (StarTeamSCMException e) {

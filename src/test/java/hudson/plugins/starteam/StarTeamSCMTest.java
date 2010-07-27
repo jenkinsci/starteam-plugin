@@ -38,7 +38,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Before
 	public void setUp() throws Exception {
 		super.setUp();
-		t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password) ;
+		t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, null, false) ;
 	}
 		
 	/**
@@ -47,7 +47,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Test
 	public void testConstructorStarTeamSCM()
 	{
-			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password) ;
+			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password,  null, false) ;
 			assertEquals(hostName,t.getHostname());
 			assertEquals(port,t.getPort());
 			assertEquals(projectName,t.getProjectname());
@@ -63,7 +63,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Test
     public void testConfigRoundtrip() throws Exception {
         FreeStyleProject project = createFreeStyleProject();
-        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password) ;
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, null, false) ;
         project.setScm(scm);
 
         // config roundtrip

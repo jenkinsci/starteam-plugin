@@ -38,34 +38,34 @@ public class StarTeamConnectionTest {
 
 	@Test
 	public void equals() {
-		assertFalse("Null is not equal", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1").equals(null));
-		assertFalse("Different types are not equal", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1").equals(new Object()));
+		assertFalse("Null is not equal", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null).equals(null));
+		assertFalse("Different types are not equal", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null).equals(new Object()));
 
-		assertThat("Different hosts", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("2", 1, "1", "1", "1", "1", "1"))));
-		assertThat("Different ports", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("1", 2, "1", "1", "1", "1", "1"))));
-		assertThat("Different users", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("1", 1, "2", "1", "1", "1", "1"))));
-		assertThat("Different passwords", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("1", 1, "1", "2", "1", "1", "1"))));
-		assertThat("Different projects", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("1", 1, "1", "1", "2", "1", "1"))));
-		assertThat("Different views", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("1", 1, "1", "1", "1", "2", "1"))));
-		assertThat("Different folders", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(not(new StarTeamConnection("1", 1, "1", "1", "1", "1", "2"))));
+		assertThat("Different hosts", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("2", 1, "1", "1", "1", "1", "1", null))));
+		assertThat("Different ports", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("1", 2, "1", "1", "1", "1", "1", null))));
+		assertThat("Different users", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("1", 1, "2", "1", "1", "1", "1", null))));
+		assertThat("Different passwords", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("1", 1, "1", "2", "1", "1", "1", null))));
+		assertThat("Different projects", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("1", 1, "1", "1", "2", "1", "1", null))));
+		assertThat("Different views", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("1", 1, "1", "1", "1", "2", "1", null))));
+		assertThat("Different folders", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(not(new StarTeamConnection("1", 1, "1", "1", "1", "1", "2", null))));
 
-		assertThat("Should be equal", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1"),
-				is(new StarTeamConnection("1", 1, "1", "1", "1", "1", "1")));
+		assertThat("Should be equal", new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null),
+				is(new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null)));
 		assertThat("Equality implies that hash codes should be equals",
-				new StarTeamConnection("1", 1, "1", "1", "1", "1", "1").hashCode(),
-				is(new StarTeamConnection("1", 1, "1", "1", "1", "1", "1").hashCode()));
+				new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null).hashCode(),
+				is(new StarTeamConnection("1", 1, "1", "1", "1", "1", "1", null).hashCode()));
 	}
 
 	@Test
 	public void toStringOverride() {
-		String toString = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder").toString();
+		String toString = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder", null).toString();
 		assertThat("Missing host", toString, containsString("host: host"));
 		assertThat("Missing port", toString, containsString("port: 1234"));
 		assertThat("Missing user", toString, containsString("user: user"));
@@ -77,47 +77,47 @@ public class StarTeamConnectionTest {
 
 	@Test(expected = NullPointerException.class)
 	public void constructorValidationHost() {
-		new StarTeamConnection(null, 1, "", "", "", "", "");
+		new StarTeamConnection(null, 1, "", "", "", "", "", null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void constructorValidationPortLow() {
-		new StarTeamConnection("", -1, "", "", "", "", "");
+		new StarTeamConnection("", -1, "", "", "", "", "", null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void constructorValidationPortHigh() {
-		new StarTeamConnection("", 65536, "", "", "", "", "");
+		new StarTeamConnection("", 65536, "", "", "", "", "", null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void constructorValidationUser() {
-		new StarTeamConnection("", 1, null, "", "", "", "");
+		new StarTeamConnection("", 1, null, "", "", "", "", null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void constructorValidationPassword() {
-		new StarTeamConnection("", 1, "", null, "", "", "");
+		new StarTeamConnection("", 1, "", null, "", "", "", null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void constructorValidationProject() {
-		new StarTeamConnection("", 1, "", "", null, "", "");
+		new StarTeamConnection("", 1, "", "", null, "", "", null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void constructorValidationView() {
-		new StarTeamConnection("", 1, "", "", "", null, "");
+		new StarTeamConnection("", 1, "", "", "", null, "", null);
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void constructorValidationFolder() {
-		new StarTeamConnection("", 1, "", "", "", "", null);
+		new StarTeamConnection("", 1, "", "", "", "", null, null);
 	}
 
 	@Test
 	public void serialization() throws Exception {
-		StarTeamConnection originalConnection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder");
+		StarTeamConnection originalConnection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder", null);
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		ObjectOutputStream outputStream = new ObjectOutputStream(byteArrayOutputStream);
 		outputStream.writeObject(originalConnection);
@@ -133,7 +133,7 @@ public class StarTeamConnectionTest {
 			one(serverInfoMock).setDescription("StarTeam connection to host");
 		}});
 
-		StarTeamConnection connection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder");
+		StarTeamConnection connection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder", null);
 		connection.populateDescription(serverInfoMock);
 	}
 
@@ -145,7 +145,7 @@ public class StarTeamConnectionTest {
 			one(serverInfoMock).setDescription("StarTeam connection to host (1)");
 		}});
 		
-		StarTeamConnection connection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder");
+		StarTeamConnection connection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder", null);
 		connection.populateDescription(serverInfoMock);
 	}
 
@@ -159,7 +159,7 @@ public class StarTeamConnectionTest {
 			one(serverInfoMock).setDescription("StarTeam connection to host (2)");
 		}});
 		
-		StarTeamConnection connection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder");
+		StarTeamConnection connection = new StarTeamConnection("host", 1234, "user", "passwd", "project", "view", "folder", null);
 		connection.populateDescription(serverInfoMock);
 	}
 }

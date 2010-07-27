@@ -18,6 +18,12 @@
 	<f:entry title="View name" help="/plugin/starteam/help/stviewname.html">
 		<f:textbox name="starteam.viewname" value="${scm.viewname}" />
 	</f:entry>
+    <f:entry title="Label name (optional)" help="/plugin/starteam/help/stlabelname.html">
+        <f:textbox name="starteam.labelname" value="${scm.labelname}"/>
+    </f:entry>
+    <f:entry title="Label is Promotion State?" help="/plugin/starteam/help/stpromotionstate.html">
+        <f:checkbox name="starteam.promotionstate" checked="${scm.promotionstate}"/>
+    </f:entry>
 	<f:entry title="Folder name" help="/plugin/starteam/help/stfoldername.html">
 		<f:textbox name="starteam.foldername" value="${scm.foldername}" />
 	</f:entry>
