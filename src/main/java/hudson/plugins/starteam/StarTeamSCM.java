@@ -49,6 +49,9 @@ public class StarTeamSCM extends SCM {
 	private final String foldername;
 	private final String hostname;
 	private final int port;
+	private final String labelname;
+	private final boolean promotionstate;
+
 	private final StarTeamViewSelector config;
 
 	/**
@@ -85,15 +88,17 @@ public class StarTeamSCM extends SCM {
 		this.foldername = foldername;
 		this.user = username;
 		this.passwd = password;
+		this.labelname = labelname;
+		this.promotionstate = promotionstate;
 		StarTeamViewSelector result = null;
-		if (labelname != null && !labelname.isEmpty())
+		if (this.labelname != null && !this.labelname.isEmpty())
 		{
 			try {
-				if (promotionstate)
+				if (this.promotionstate)
 				{
-					result = new StarTeamViewSelector(labelname,"Promotion");
+					result = new StarTeamViewSelector(this.labelname,"Promotion");
 				} else {
-					result = new StarTeamViewSelector(labelname,"Label");
+					result = new StarTeamViewSelector(this.labelname,"Label");
 				}
 			} catch (ParseException e) {
 				e.printStackTrace();
@@ -303,5 +308,13 @@ public class StarTeamSCM extends SCM {
 	 */
 	public String getPassword() {
 		return passwd;
+	}
+
+	public String getLabelname() {
+		return labelname;
+	}
+
+	public boolean isPromotionstate() {
+		return promotionstate;
 	}
 }

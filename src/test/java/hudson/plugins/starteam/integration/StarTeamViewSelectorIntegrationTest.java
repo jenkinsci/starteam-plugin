@@ -1,9 +1,5 @@
 package hudson.plugins.starteam.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
 import hudson.plugins.starteam.StarTeamConnection;
 import hudson.plugins.starteam.StarTeamSCMException;
 import hudson.plugins.starteam.StarTeamViewSelector;

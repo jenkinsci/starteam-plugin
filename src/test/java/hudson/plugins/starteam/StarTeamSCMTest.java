@@ -34,6 +34,10 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	String folderName = System.getProperty("test.starteam.foldername", "");
 	String userName = System.getProperty("test.starteam.username", "");
 	String password = System.getProperty("test.starteam.password", "");
+	String labelName = System.getProperty("test.starteam.labelname", "hudsonTestLabel");
+	String promotionName = System.getProperty("test.starteam.promotionname", "hudsonPromotionState");
+	String changeDate = System.getProperty("test.starteam.changedate", "2010/7/14");
+
 
 	@Before
 	public void setUp() throws Exception {
@@ -47,7 +51,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Test
 	public void testConstructorStarTeamSCM()
 	{
-			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password,  null, false) ;
+		    boolean promotionState = false;
+			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password,  labelName, promotionState) ;
 			assertEquals(hostName,t.getHostname());
 			assertEquals(port,t.getPort());
 			assertEquals(projectName,t.getProjectname());
@@ -55,6 +60,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
 			assertEquals(folderName,t.getFoldername());
 			assertEquals(userName,t.getUsername());
 			assertEquals(password,t.getPassword());
+			assertEquals(labelName,t.getLabelname());
+			assertEquals(promotionState,t.isPromotionstate());
 	}
     /**
      * Makes sure that the configuration survives the round-trip.
@@ -62,8 +69,9 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	@Bug(6881)
 	@Test
     public void testConfigRoundtrip() throws Exception {
+	    boolean promotionState = false;
         FreeStyleProject project = createFreeStyleProject();
-        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, null, false) ;
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
         project.setScm(scm);
 
         // config roundtrip
@@ -71,7 +79,18 @@ public class StarTeamSCMTest extends HudsonTestCase {
 
         // verify that the data is intact
         assertEqualBeans(scm, project.getScm(),
-                "hostname,port,projectname,viewname,foldername,username,password");
+                "hostname,port,projectname,viewname,foldername,username,password,labelname,promotionstate");
+        
+        promotionState = true;
+        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, promotionName, promotionState) ;
+        project.setScm(scm);
+
+        // config roundtrip
+        submit(new WebClient().getPage(project,"configure").getFormByName("config"));
+
+        // verify that the data is intact
+        assertEqualBeans(scm, project.getScm(),
+                "hostname,port,projectname,viewname,foldername,username,password,labelname,promotionstate");
 
     }
 
