@@ -32,7 +32,7 @@ public class StarTeamViewSelector implements Serializable {
 	 * Promotion: view brings items designated by a promotion state, similar to label-based view.
 	 */
 	enum ConfigType {
-		Current, Label, Time, Promotion
+		CURRENT, LABEL, TIME, PROMOTION
 	};
 
 	private final String configInfo;       // configuration information Label name, Promotion State name or date 
@@ -54,18 +54,18 @@ public class StarTeamViewSelector implements Serializable {
 	 */
 	public StarTeamViewSelector(String configInfo, String configType) throws ParseException {
 		this.configInfo = configInfo;
-		ConfigType result = ConfigType.Current;
-		try{
-			result = ConfigType.valueOf(configType);
-		} catch ( IllegalArgumentException e)
-		{
-		    	
+		ConfigType result = ConfigType.CURRENT;
+		if (configType != null)	{
+			try{
+				result = ConfigType.valueOf(configType.toUpperCase());
+			} catch ( IllegalArgumentException ignored)	{
+				// ignored exception - by default the type will go to CURRENT
+			}
 		}
 		this.configType = result;
 		this.df = new SimpleDateFormat("yyyy/M/d");
 
-	    if (this.configType == ConfigType.Time)
-	    {
+	    if (this.configType == ConfigType.TIME) {
 	    	df.parse(configInfo);
 	    }
 	}
@@ -75,25 +75,24 @@ public class StarTeamViewSelector implements Serializable {
 
 		if (configInfo != null && !configInfo.isEmpty()) {
 			switch (configType) {
-			case Current:
+			case CURRENT:
 				configuration = ViewConfiguration.createTip();
 				break;
-			case Label:
+			case LABEL:
 				int labelId = findLabelInView(baseView, configInfo);
 				configuration = ViewConfiguration.createFromLabel(labelId);
 				break;
-			case Promotion:		          
+			case PROMOTION:		          
 				// note: If the promotion state is assigned to <<current>> then the resulting ID will be NULL and
 				// we will revert to a view based on the current tip.
 				Integer promotionStateId = findPromotionStateInView(baseView, configInfo);
-				if (promotionStateId != null)
-				{
+				if (promotionStateId != null) {
 					configuration = ViewConfiguration.createFromPromotionState(promotionStateId);
 				} else {					
 					configuration = ViewConfiguration.createTip();
 				}
 				break;
-			case Time:
+			case TIME:
 	            Date effectiveDate = df.parse(configInfo);
 				configuration = ViewConfiguration.createFromTime(new OLEDate(effectiveDate));
 				break;
@@ -126,6 +125,14 @@ public class StarTeamViewSelector implements Serializable {
 			}
 		}
 		throw new StarTeamSCMException("Couldn't find promotion state " + promotionState + " in view " + view.getName());
+	}
+
+	public String getConfigInfo() {
+		return configInfo;
+	}
+
+	public String getConfigType() {
+		return configType.name();
 	}
 
 }

@@ -642,10 +642,14 @@ public class StarTeamConnection implements Serializable {
 	 * Close the connection.
 	 */
 	public void close() {
-		rootFolder.discardItems(rootFolder.getTypeNames().FILE, -1);
-		view.discard();
-		project.discard();
-		server.disconnect();
+		if (server.isConnected()) {
+			if (rootFolder != null)	{
+				rootFolder.discardItems(rootFolder.getTypeNames().FILE, -1);
+			}
+			view.discard();
+			project.discard();
+			server.disconnect();
+		}
 	}
 
 	@Override
