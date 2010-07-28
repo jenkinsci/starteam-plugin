@@ -2,7 +2,10 @@ package hudson.plugins.starteam;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.Cause;
+import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.Result;
 import hudson.model.StreamBuildListener;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
@@ -26,6 +29,7 @@ import org.jvnet.hudson.test.HudsonTestCase;
  */
 public class StarTeamSCMTest extends HudsonTestCase {
 
+	private static final int LOG_LIMIT = 1000;
 	StarTeamSCM t;
 	String hostName = System.getProperty("test.starteam.hostname", "127.0.0.1");
 	int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "1")) ; 
@@ -94,6 +98,24 @@ public class StarTeamSCMTest extends HudsonTestCase {
 
     }
 
+    /**
+     * Makes sure that the configuration survives the round-trip.
+     */
+	@Test
+    public void testCheckout() throws Exception {
+	    boolean promotionState = false;
+        FreeStyleProject project = createFreeStyleProject();
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
+        project.setScm(scm);
+
+        // config roundtrip
+        submit(new WebClient().getPage(project,"configure").getFormByName("config"));
+
+        FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserCause()).get();
+        System.out.println(build.getLog(LOG_LIMIT));
+        assertBuildStatus(Result.SUCCESS,build);
+    }
+	
 	/*
 	 * (non-Javadoc)
 	 * 
