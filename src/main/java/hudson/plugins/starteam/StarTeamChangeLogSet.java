@@ -39,7 +39,7 @@ public class StarTeamChangeLogSet extends ChangeLogSet<StarTeamChangeLogEntry> {
 	}
 
 	/**
-	 * return an iterator on all change log entry.
+	 * return an iterator over all change log entries.
 	 */
 	public Iterator<StarTeamChangeLogEntry> iterator() {
 		return history.iterator();

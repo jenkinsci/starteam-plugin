@@ -15,7 +15,7 @@ import java.util.Date;
  * This Actor class allow to check for changes in starteam repository between
  * builds.
  * 
- * @author ip90568
+ * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
  * @author Steve Favez <sfavez@verisign.com>
  * 
  */

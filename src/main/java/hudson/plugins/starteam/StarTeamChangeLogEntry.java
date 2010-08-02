@@ -2,7 +2,6 @@ package hudson.plugins.starteam;
 
 import hudson.model.User;
 
-import java.awt.List;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;

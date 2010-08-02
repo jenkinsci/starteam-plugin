@@ -310,10 +310,20 @@ public class StarTeamSCM extends SCM {
 		return passwd;
 	}
 
+	/**
+	 * Get the label used to check out from starteam.
+	 *
+	 * @return The label.
+	 */
 	public String getLabelname() {
 		return labelname;
 	}
 
+	/**
+	 * Is the label a promotion state name?
+	 *
+	 * @return True if the label name is actually a promotion state.
+	 */
 	public boolean isPromotionstate() {
 		return promotionstate;
 	}

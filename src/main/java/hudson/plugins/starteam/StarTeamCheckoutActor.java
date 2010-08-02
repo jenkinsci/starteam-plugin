@@ -22,7 +22,7 @@ import java.util.Map;
  * 
  * It allows now to create the changelog file if required.
  *
- * @author ip90568
+ * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
  * @author Steve Favez <sfavez@verisign.com>
  */
 class StarTeamCheckoutActor implements FileCallable<Boolean> {
