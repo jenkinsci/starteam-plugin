@@ -9,7 +9,9 @@ import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -191,8 +193,8 @@ public class StarTeamConnection implements Serializable {
 	/**
 	 * checkout the files from starteam
 	 *
-	 * @param changeSet
-	 * @param buildFolder TODO
+	 * @param changeSet a description of changes  
+	 * @param buildFolder A root folder for given build. it is used for storing information.
 	 * @throws IOException if checkout fails.
 	 */
 	public void checkOut(StarTeamChangeSet changeSet, PrintStream logger, java.io.File buildFolder) throws IOException {
@@ -406,20 +408,19 @@ public class StarTeamConnection implements Serializable {
 	}
 
 	  /**
-	 * @param rootFolder Map of all project directories
+	 * @param rootFolder main project directory
 	 * @param workspace a workspace directory
-	 * @param filePointFile a file containing previous File Point description
+	 * @param historicFilePoints a collection containing File Points to be compared (previous build)
 	 * @param logger a logger for consuming log messages
 	 * @return set of changes  
 	 * @throws StarTeamSCMException
 	 * @throws IOException
 	 */
-	public StarTeamChangeSet computeChangeSet(Folder rootFolder, java.io.File workspace, final Collection<StarTeamFilePoint> historicStarteamFilePoint, PrintStream logger) throws StarTeamSCMException, IOException {
-		//Folder rootFolder = getRootFolder();
+	public StarTeamChangeSet computeChangeSet(Folder rootFolder, java.io.File workspace, final Collection<StarTeamFilePoint> historicFilePoints, PrintStream logger) throws StarTeamSCMException, IOException {
 	    // --- compute changes as per starteam
 
 	    final Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, workspace);
-	    final Map<java.io.File, com.starbase.starteam.File> starteamFileMap = StarTeamFilePointFunctions.convertToFileMap(starteamFiles);
+	    final Map<java.io.File, com.starbase.starteam.File> starteamFileMap = StarTeamFunctions.convertToFileMap(starteamFiles);
 	    final Collection<java.io.File> starteamFileSet = starteamFileMap.keySet();
 	    final Collection<StarTeamFilePoint> starteamFilePoint = StarTeamFilePointFunctions.convertFilePointCollection(starteamFiles);
 
@@ -434,13 +435,13 @@ public class StarTeamConnection implements Serializable {
 
 	    // --- compute differences as per historic storage file
 
-	    if (historicStarteamFilePoint != null && !historicStarteamFilePoint.isEmpty()) {
+	    if (historicFilePoints != null && !historicFilePoints.isEmpty()) {
 
 	      try {
 
 	        changeSet.setComparisonAvailable(true);
 
-	        StarTeamFilePointFunctions.computeDifference(starteamFilePoint, historicStarteamFilePoint, changeSet);
+	        computeDifference(starteamFilePoint, historicFilePoints, changeSet, starteamFileMap);
 
 	      } catch (Throwable t) {
 	        t.printStackTrace(logger);
@@ -448,7 +449,7 @@ public class StarTeamConnection implements Serializable {
 	    } else {
 	    	for (File file: starteamFiles)
 	    	{
-	    		changeSet.addeChange(FileToStarTeamChangeLogEntry(file));
+	    		changeSet.addChange(FileToStarTeamChangeLogEntry(file));
 	    	}
 	    }
 
@@ -457,6 +458,11 @@ public class StarTeamConnection implements Serializable {
 
 	public StarTeamChangeLogEntry FileToStarTeamChangeLogEntry (File f)
 	{
+		return FileToStarTeamChangeLogEntry(f, "change");
+	}
+
+	public StarTeamChangeLogEntry FileToStarTeamChangeLogEntry (File f, String change)
+	{
 		int revisionNumber = f.getContentVersion();
 		int userId = f.getModifiedBy();
 		String username = getUsername(userId);
@@ -464,6 +470,58 @@ public class StarTeamConnection implements Serializable {
 		Date date = new Date(f.getModifiedTime().getLongValue());
 		String fileName = f.getFullName();		
 
-		return new StarTeamChangeLogEntry(fileName,revisionNumber,date,username,msg, "change");
+		return new StarTeamChangeLogEntry(fileName,revisionNumber,date,username,msg, change);
 	}
+
+	public StarTeamChangeSet computeDifference(final Collection<StarTeamFilePoint> currentFilePoint, final Collection<StarTeamFilePoint> historicFilePoint, StarTeamChangeSet changeSet, Map<java.io.File, com.starbase.starteam.File> starteamFileMap) {
+		  final Map<java.io.File, StarTeamFilePoint> starteamFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(currentFilePoint);
+		  Map<java.io.File, StarTeamFilePoint> historicFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(historicFilePoint);
+	
+		  final Set<java.io.File> starteamOnly = new HashSet<java.io.File>();
+		  starteamOnly.addAll(starteamFilePointMap.keySet());
+		  starteamOnly.removeAll(historicFilePointMap.keySet());
+	
+		  final Set<java.io.File> historicOnly = new HashSet<java.io.File>();
+		  historicOnly.addAll(historicFilePointMap.keySet());
+		  historicOnly.removeAll(starteamFilePointMap.keySet());
+	
+		  final Set<java.io.File> common = new HashSet<java.io.File>();
+		  common.addAll(starteamFilePointMap.keySet());
+		  common.removeAll(starteamOnly);
+	
+		  final Set<java.io.File> higher = new HashSet<java.io.File>(); // newer revision
+		  final Set<java.io.File> lower = new HashSet<java.io.File>(); // typically rollback of a revision
+		  StarTeamChangeLogEntry change;
+	
+		  for (java.io.File f : common) {
+			  StarTeamFilePoint starteam = starteamFilePointMap.get(f);
+			  StarTeamFilePoint historic = historicFilePointMap.get(f);
+	
+			  if (starteam.getRevisionNumber() == historic.getRevisionNumber()) {
+				  //unchanged files
+				  continue;
+			  }
+			  com.starbase.starteam.File stf = starteamFileMap.get(f);
+			  if (starteam.getRevisionNumber() > historic.getRevisionNumber()) {
+				  higher.add(f);
+				  changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"change"));
+			  }
+			  if (starteam.getRevisionNumber() < historic.getRevisionNumber()) {
+				  lower.add(f);
+				  changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"rollback"));
+			  }
+		  }
+	
+		  for (java.io.File f : historicOnly) {
+			  StarTeamFilePoint historic = historicFilePointMap.get(f);
+			  change = new StarTeamChangeLogEntry(historic.getFullfilepath(), historic.getRevisionNumber(), new Date(), "", "", "removed");
+			  changeSet.addChange(change);
+		  }
+		  for (java.io.File f : starteamOnly) {
+			  com.starbase.starteam.File stf = starteamFileMap.get(f);
+			  changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"added"));
+		  }
+	
+		  return changeSet;
+	  }
 }

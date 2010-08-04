@@ -3,21 +3,21 @@ package hudson.plugins.starteam;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
+
+/**
+ * Functions operating on StarTeamFilePoint type.
+ */
 
 public class StarTeamFilePointFunctions {
 
   // projection and collection conversion
 
-  /**
+/**
  * @param collection Collection of StarTeam files
  * @return collection of full path file names 
  */
@@ -66,86 +66,6 @@ public static Collection<java.io.File> convertToFileCollection(final Collection<
     return result;
   }
 
-  public static Map<java.io.File,com.starbase.starteam.File> convertToFileMap(final Collection<com.starbase.starteam.File> collection) {
-    Map<java.io.File,com.starbase.starteam.File> result = new TreeMap<java.io.File,com.starbase.starteam.File>();
-    for (com.starbase.starteam.File f:collection) {
-      result.put(new java.io.File(f.getFullName()),f);
-    }
-    return result;
-  }
-
-  // computation
-
-  public static StarTeamChangeSet computeDifference(final Collection<StarTeamFilePoint> currentFilePoint, final Collection<StarTeamFilePoint> historicFilePoint, StarTeamChangeSet changeSet) {
-	  final Map<java.io.File, StarTeamFilePoint> starteamFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(currentFilePoint);
-	  Map<java.io.File, StarTeamFilePoint> historicFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(historicFilePoint);
-
-	  final Set<java.io.File> starteamOnly = new HashSet<java.io.File>();
-	  starteamOnly.addAll(starteamFilePointMap.keySet());
-	  starteamOnly.removeAll(historicFilePointMap.keySet());
-
-	  final Set<java.io.File> historicOnly = new HashSet<java.io.File>();
-	  historicOnly.addAll(historicFilePointMap.keySet());
-	  historicOnly.removeAll(starteamFilePointMap.keySet());
-
-	  final Set<java.io.File> common = new HashSet<java.io.File>();
-	  common.addAll(starteamFilePointMap.keySet());
-	  common.removeAll(starteamOnly);
-
-	  //    final Set<java.io.File> unchanged = new HashSet<java.io.File>();
-	  final Set<java.io.File> higher = new HashSet<java.io.File>(); // newer revision
-	  final Set<java.io.File> lower = new HashSet<java.io.File>(); // typically rollback of a revision
-	  StarTeamChangeLogEntry change;
-
-	  for (java.io.File f : common) {
-		  StarTeamFilePoint starteam = starteamFilePointMap.get(f);
-		  StarTeamFilePoint historic = historicFilePointMap.get(f);
-
-		  if (starteam.getRevisionNumber() == historic.getRevisionNumber()) {
-			  //unchanged.add(f);
-			  continue;
-		  }
-		  if (starteam.getRevisionNumber() > historic.getRevisionNumber()) {
-			  higher.add(f);
-		  }
-		  if (starteam.getRevisionNumber() < historic.getRevisionNumber()) {
-			  lower.add(f);
-		  }
-		  change = new StarTeamChangeLogEntry(starteam.getFullfilepath(), starteam.getRevisionNumber(), new Date(), "", "", "changed");
-		  changeSet.addeChange(change);
-	  }
-
-	  for (java.io.File f : historicOnly) {
-		  StarTeamFilePoint historic = historicFilePointMap.get(f);
-		  change = new StarTeamChangeLogEntry(historic.getFullfilepath(), historic.getRevisionNumber(), new Date(), "", "", "removed");
-		  changeSet.addeChange(change);
-	  }
-	  for (java.io.File f : starteamOnly) {
-		  StarTeamFilePoint starteam = starteamFilePointMap.get(f);
-		  change = new StarTeamChangeLogEntry(starteam.getFullfilepath(), starteam.getRevisionNumber(), new Date(), "", "", "added");
-		  changeSet.addeChange(change);
-	  }
-	  //    changeSet.setHigher(extractFilePointSubCollection(starteamFilePointMap,higher));
-	  //    changeSet.setLower(annotate(extractFilePointSubCollection(historicFilePointMap,lower),starteamFilePointMap));
-	  //    changeSet.setAdded(extractFilePointSubCollection(starteamFilePointMap,starteamOnly));
-	  //    changeSet.setDelete(extractFilePointSubCollection(historicFilePointMap,historicOnly));
-
-	  return changeSet;
-
-  }
-
-  private static Collection<StarTeamFilePoint> annotate(Collection<StarTeamFilePoint> starTeamFilePoints, Map<java.io.File, StarTeamFilePoint> starteamFilePointMap) {
-    Map<java.io.File, StarTeamFilePoint> map = convertToFilePointMap(starTeamFilePoints);
-    for (Map.Entry<java.io.File,StarTeamFilePoint> fp:map.entrySet()) {
-      StarTeamFilePoint a = fp.getValue();
-      StarTeamFilePoint b = starteamFilePointMap.get(fp.getKey());
-//      a.setDate(b.getDate());
-//      a.setMsg(b.getMsg());
-//      a.setUsername(b.getUsername());
-    }
-    return starTeamFilePoints;
-  }
-
   /** Recursive file system discovery
    * 
    * @param workspace a Hudson workspace directory
@@ -192,9 +112,6 @@ public static Collection<java.io.File> convertToFileCollection(final Collection<
       String path = str.substring(pos+1);
 
       StarTeamFilePoint f = new StarTeamFilePoint(path,Integer.parseInt(revision));
-//      f.setFullfilepath(path);
-//      f.setFileName(new java.io.File(path).getName());
-//      f.setRevisionNumber(Integer.parseInt(revision));
 
       result.add(f);
     }
