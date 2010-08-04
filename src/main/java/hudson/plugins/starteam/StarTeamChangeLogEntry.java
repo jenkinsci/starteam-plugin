@@ -15,15 +15,28 @@ import java.util.LinkedList;
  * @version 1.0
  */
 public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
+
 	private int revisionNumber;
-
 	private String username;
-
 	private String msg;
-
 	private Date date;
-
 	private String fileName;
+	private String change;
+	
+	public StarTeamChangeLogEntry(String fileName, int revisionNumber,
+			Date date, String username, String msg, String change) {
+		super();
+		this.revisionNumber = revisionNumber;
+		this.username = username;
+		this.msg = msg;
+		this.date = date;
+		this.fileName = fileName;
+		this.change = change;
+	}
+
+	public StarTeamChangeLogEntry() {
+		super();
+	}
 
 	@Override
 	public Collection<String> getAffectedPaths() {
@@ -51,6 +64,10 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 
 	@Override
 	public String getMsg() {
+		if (msg == null)
+		{
+			return "";
+		}
 		return msg;
 	}
 
@@ -80,6 +97,10 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 
 	public void setFileName(String aFileName) {
 		this.fileName = aFileName;
+	}
+
+	public String getChange() {
+		return change;
 	}
 
 }

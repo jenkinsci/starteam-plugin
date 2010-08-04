@@ -1,17 +1,25 @@
 package hudson.plugins.starteam.integration;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 
+import hudson.plugins.starteam.StarTeamChangeLogEntry;
+import hudson.plugins.starteam.StarTeamChangeSet;
 import hudson.plugins.starteam.StarTeamConnection;
+import hudson.plugins.starteam.StarTeamFilePoint;
+import hudson.plugins.starteam.StarTeamFunctions;
 import hudson.plugins.starteam.StarTeamSCMException;
+import hudson.plugins.starteam.StarTeamViewSelector;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import com.starbase.starteam.Folder;
 
 /**
  * test all starteam functionalities against a real starteam repository
@@ -65,33 +73,70 @@ public class StarteamConnectionIntegrationTest {
 	 */
 	@Test
 	public void testFindAllFiles() {
-		Collection<com.starbase.starteam.File> starteamFiles = starTeamConnection.findAllFiles(parentDirectory, System.out, true).values() ;
+		
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(starTeamConnection.getRootFolder(), parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
+		int i=0;
+		for (com.starbase.starteam.File file: starteamFiles)
+		{
+			Assert.assertNotNull("file ["+i+"] in list of all files is null",file);
+			i++;
+		}
 		starTeamConnection.close() ;
 	}
 	
 	/**
-	 * find all changed files in starteam repository since last year.
+	 * find all changed files in starteam repository.
+	 * @throws IOException 
+	 * @throws StarTeamSCMException 
 	 */
 	@Test
-	public void testFindChangedFiles() {
-		Calendar lastYear = Calendar.getInstance() ;
-		lastYear.add(Calendar.MONTH, -3) ;
-		Collection<com.starbase.starteam.File> starteamFiles = starTeamConnection.findChangedFiles(parentDirectory , System.out, lastYear.getTime()) ;
-		Assert.assertNotNull(starteamFiles) ;
-		Assert.assertTrue( starteamFiles.size() > 0 ) ;
-		starTeamConnection.close() ;
-	}
+	public void testFindChangedFiles() throws StarTeamSCMException, IOException {
+
+		// get connection with view set in past
+		Calendar timeInPast = Calendar.getInstance() ;
+		timeInPast.add(Calendar.MONTH, -3);
+		StarTeamViewSelector selector = new StarTeamViewSelector(timeInPast.getTime());		
+		StarTeamConnection oldStarTeamConnection = new StarTeamConnection(starTeamConnection,selector);
+		oldStarTeamConnection.initialize();
+
+		// get file list from the view to identify changes since the timeInPast 
+		// there is no list of previous files 
+		Folder rootFolder = oldStarTeamConnection.getRootFolder();
+		File workspace = parentDirectory;
+		StarTeamChangeSet oldChangeSet = oldStarTeamConnection.computeChangeSet(rootFolder, workspace, null, System.out);
+
+		// a sanity check - everything in the old set should be new, because it doesn't have a previous build
+		Assert.assertNotNull(oldChangeSet) ;
+		Assert.assertFalse(oldChangeSet.isComparisonAvailable()) ;
+		Assert.assertTrue(oldChangeSet.hasChanges()) ;
+
+		// a sanity check - everything in the old set should be new, because it doesn't have a previous build
+		Collection<StarTeamFilePoint> historicStarteamFilePoint = oldChangeSet.getFilePointsToRemember();
+		Assert.assertNotNull(historicStarteamFilePoint) ;
+		Assert.assertFalse(historicStarteamFilePoint.isEmpty()) ;
+
+		Collection<StarTeamChangeLogEntry> oldLogEntries = oldChangeSet.getChanges();
+		Assert.assertNotNull(oldLogEntries) ;
+		Assert.assertFalse(oldLogEntries.isEmpty()) ;
+		
+		// get the change set from connection using historical list of files
+		rootFolder = starTeamConnection.getRootFolder();
+		StarTeamChangeSet newChangeSet = starTeamConnection.computeChangeSet(rootFolder, workspace, historicStarteamFilePoint, System.out);
+		Assert.assertNotNull(newChangeSet) ;
+		Assert.assertTrue(newChangeSet.isComparisonAvailable()) ;
+		Assert.assertTrue(newChangeSet.hasChanges()) ;
+
+		Collection<StarTeamFilePoint> newStarteamFilePoint = newChangeSet.getFilePointsToRemember();
+		Assert.assertNotNull(newStarteamFilePoint) ;
+		Assert.assertFalse(newStarteamFilePoint.isEmpty()) ;
 	
-	@Test
-	public void testCalculatePreviousSynchronizedDate() {
-		Calendar lastHour = Calendar.getInstance() ;
-		lastHour.add(Calendar.HOUR, -1) ;
-		Calendar currentDate = Calendar.getInstance() ;
-		
-		Date newDate = starTeamConnection.calculatePreviousDateWithTimeZoneCheck(lastHour.getTime(), currentDate.getTime()) ;
-		Assert.assertNotNull(newDate) ;
-		
+		Collection<StarTeamChangeLogEntry> newLogEntries = newChangeSet.getChanges();
+		Assert.assertNotNull(newLogEntries) ;
+		Assert.assertFalse(newLogEntries.isEmpty()) ;
+				
+		oldStarTeamConnection.close() ;
+		starTeamConnection.close() ;
 	}
 }

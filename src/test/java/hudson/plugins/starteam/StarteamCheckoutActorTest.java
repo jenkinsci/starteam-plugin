@@ -1,6 +1,7 @@
 package hudson.plugins.starteam;
 
 import hudson.FilePath;
+import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Cause;
 import hudson.model.Result;
@@ -18,7 +19,6 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -80,7 +80,8 @@ public class StarteamCheckoutActorTest {
 			Assert.fail("");
 		}
 		
-		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, aPreviousBuildDate, new Date(), changeLogFilePath, listener) ;
+		AbstractBuild<?,?> build = null;
+		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, aPreviousBuildDate, new Date(), changeLogFilePath, listener, build) ;
 
 		return starTeamCheckoutActor ;
 	}

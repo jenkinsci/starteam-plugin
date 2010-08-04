@@ -52,8 +52,8 @@ public class StarTeamViewSelectorTest {
 	 */
 	@Test
 	public final void testTimeValue() throws ParseException {
-		StarTeamViewSelector selector = new StarTeamViewSelector("1970/12/24","TIME");
-		assertEquals("1970/12/24",selector.getConfigInfo());
+		StarTeamViewSelector selector = new StarTeamViewSelector("1970/12/24 01:02:03","TIME");
+		assertEquals("1970/12/24 01:02:03",selector.getConfigInfo());
 		assertEquals("TIME", selector.getConfigType());
 	}
 

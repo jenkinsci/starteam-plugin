@@ -48,14 +48,11 @@ public final class StarTeamChangeLogBuilder {
 	 *            the stream to write to
 	 * @param aChanges
 	 *            the history objects to store
-	 * @param aConnection
-	 *            the connection to the StarTeam Server (required to determine
-	 *            the name of the user who made changes)
 	 * @throws IOException
 	 * 
 	 */
 	public static boolean writeChangeLog(OutputStream aOutputStream,
-			Collection<File> aChanges, StarTeamConnection aConnection)
+			Collection<File> aChanges)
 			throws IOException {
 
 		GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
@@ -72,22 +69,80 @@ public final class StarTeamChangeLogBuilder {
 		printwriter.println("<?xml version='1.0' encoding='UTF-8'?>");
 		printwriter.println("<changelog>");
 		for (File change : aChanges) {
-			printwriter.println("\t<entry>");
-			printwriter.println("\t\t<fileName>" + change.getName() + "</fileName>");
-			printwriter.println("\t\t<revisionNumber>" + change.getContentVersion()
-					+ "</revisionNumber>");
-			java.util.Date aDate = change.getModifiedTime().createDate();
-			printwriter.println("\t\t<date>"
-					+ Util.xmlEscape(dateFormat.format(aDate)) + "</date>");
-			printwriter.println("\t\t<message>"
-					+ Util.xmlEscape(change.getComment()) + "</message>");
-			printwriter.println("\t\t<user>"
-					+ aConnection.getUsername(change.getModifiedBy())
-					+ "</user>");
-			printwriter.println("\t</entry>");
+			writeEntry(dateFormat, printwriter, change);
 		}
 		printwriter.println("</changelog>");
 		printwriter.close();
 		return true;
 	}
+
+	/**
+	 * @param dateFormat
+	 * @param printwriter
+	 * @param change
+	 */
+	private static void writeEntry(SimpleDateFormat dateFormat,
+			PrintWriter printwriter, File change) {
+		printwriter.println("\t<entry>");
+		printwriter.println("\t\t<fileName>" + change.getName() + "</fileName>");
+		printwriter.println("\t\t<revisionNumber>" + change.getContentVersion()
+				+ "</revisionNumber>");
+		java.util.Date aDate = change.getModifiedTime().createDate();
+		printwriter.println("\t\t<date>"
+				+ Util.xmlEscape(dateFormat.format(aDate)) + "</date>");
+		printwriter.println("\t\t<message>"
+				+ Util.xmlEscape(change.getComment()) + "</message>");
+		printwriter.println("\t\t<user>"
+				+ change.getModifiedBy()
+				+ "</user>");
+		printwriter.println("\t</entry>");
+	}
+
+	public static boolean writeChangeLog(OutputStream outputStream,
+			StarTeamChangeSet changeSet)
+			throws IOException {
+
+		GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
+		
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
+	    dateFormat.setCalendar(cal);
+	    dateFormat.setLenient(false);
+		
+		OutputStreamWriter writer = new OutputStreamWriter(outputStream,
+				Charset.forName("UTF-8"));
+		
+		PrintWriter printwriter = new PrintWriter( writer ) ;
+
+		printwriter.println("<?xml version='1.0' encoding='UTF-8'?>");
+		printwriter.println("<changelog>");
+		for (StarTeamChangeLogEntry change : changeSet.getChanges()) {
+			writeEntry(dateFormat, printwriter, change);
+		}
+		printwriter.println("</changelog>");
+		printwriter.close();
+		return true;
+	}
+
+	/**
+	 * @param dateFormat
+	 * @param printwriter
+	 * @param change
+	 */
+	private static void writeEntry(SimpleDateFormat dateFormat,
+			PrintWriter printwriter, StarTeamChangeLogEntry change) {
+		printwriter.println("\t<entry>");
+		printwriter.println("\t\t<fileName>" + change.getFileName() + "</fileName>");
+		printwriter.println("\t\t<revisionNumber>" + change.getRevisionNumber()
+				+ "</revisionNumber>");
+		java.util.Date aDate = change.getDate();
+		printwriter.println("\t\t<date>"
+				+ Util.xmlEscape(dateFormat.format(aDate)) + "</date>");
+		printwriter.println("\t\t<message>"
+				+ Util.xmlEscape(change.getMsg()) + "</message>");
+		printwriter.println("\t\t<user>"
+				+ change.getUsername()
+				+ "</user>");
+		printwriter.println("\t</entry>");
+	}
+
 }

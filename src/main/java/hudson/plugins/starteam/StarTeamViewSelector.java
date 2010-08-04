@@ -37,7 +37,7 @@ public class StarTeamViewSelector implements Serializable {
 
 	private final String configInfo;       // configuration information Label name, Promotion State name or date 
 	private final ConfigType configType;   // type of configuration.
-	private final DateFormat df;
+	private final DateFormat df = new SimpleDateFormat("yyyy/M/d HH:mm:ss");
 
 	/**
 	 * Default constructor
@@ -63,13 +63,22 @@ public class StarTeamViewSelector implements Serializable {
 			}
 		}
 		this.configType = result;
-		this.df = new SimpleDateFormat("yyyy/M/d");
 
 	    if (this.configType == ConfigType.TIME) {
 	    	df.parse(configInfo);
 	    }
 	}
 	
+	public StarTeamViewSelector(Date time) {
+		if (time != null)	{
+			this.configType = ConfigType.TIME;
+			this.configInfo = df.format(time);
+		} else {
+			this.configType = ConfigType.CURRENT;
+			this.configInfo = null;
+	    }
+	}
+
 	public View configView(View baseView) throws StarTeamSCMException, ParseException{
 		final ViewConfiguration configuration;
 

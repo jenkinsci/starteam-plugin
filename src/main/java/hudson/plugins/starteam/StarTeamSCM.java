@@ -30,7 +30,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * Add support for change log and synchronization between starteam repository and hudson's workspace.
  * Add support for change log creation.
  * Refactoring to use Extension annotation and to remove use of deprecated API.
- * 
+ *
  * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
  * @author Steve Favez <sfavez@verisign.com>
  */
@@ -129,7 +129,7 @@ public class StarTeamSCM extends SCM {
 		
 		// Create an actor to do the checkout, possibly on a remote machine
 		StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-				port, user, passwd, projectname, viewname, foldername, config, previousBuildDate, currentBuildDate, changeLogFilePath, listener);
+				port, user, passwd, projectname, viewname, foldername, config, previousBuildDate, currentBuildDate, changeLogFilePath, listener, build);
 		if (workspace.act(co_actor)) {
 			// change log is written during checkout (only one pass for
 			// comparison)
@@ -143,7 +143,7 @@ public class StarTeamSCM extends SCM {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see hudson.scm.SCM#createChangeLogParser()
 	 */
 	@Override
@@ -153,7 +153,7 @@ public class StarTeamSCM extends SCM {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see hudson.scm.SCM#getDescriptor()
 	 */
 	@Override
@@ -164,7 +164,7 @@ public class StarTeamSCM extends SCM {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see hudson.scm.SCM#pollChanges(hudson.model.AbstractProject,
 	 *      hudson.Launcher, hudson.FilePath, hudson.model.TaskListener)
 	 */
@@ -174,7 +174,8 @@ public class StarTeamSCM extends SCM {
 			final TaskListener listener) throws IOException,
 			InterruptedException {
 		boolean status = false;
-		Run run = proj.getLastBuild();
+		Run<?, ?> run = proj.getLastBuild();
+		AbstractBuild<?,?> lastBuild = (AbstractBuild<?, ?>) proj.getLastBuild();
 		Date sinceDate = null;
 		if ( run != null) {
 		    sinceDate= run.getTimestamp().getTime();
@@ -184,20 +185,20 @@ public class StarTeamSCM extends SCM {
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
 				user, passwd, projectname, viewname, foldername,
 				config, sinceDate,
-				currentServerDate, listener);
+				currentServerDate, listener, lastBuild);
 		if (workspace.act(p_actor)) {
 			status = true;
 		} else {
-			listener.getLogger().println("StarTeam polling failed");
+			listener.getLogger().println("StarTeam polling shows no changes");
 		}
 		return status;
 	}
 
 	/**
 	 * Descriptor class for the SCM class.
-	 * 
+	 *
 	 * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
-	 * 
+	 *
 	 */
 	public static final class StarTeamSCMDescriptorImpl extends SCMDescriptor<StarTeamSCM> {
 
@@ -249,7 +250,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the hostname this SCM is using.
-	 * 
+	 *
 	 * @return The hostname.
 	 */
 	public String getHostname() {
@@ -258,7 +259,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the port number this SCM is using.
-	 * 
+	 *
 	 * @return The port.
 	 */
 	public int getPort() {
@@ -267,7 +268,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the project name this SCM is connected to.
-	 * 
+	 *
 	 * @return The project's name.
 	 */
 	public String getProjectname() {
@@ -276,7 +277,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the view name in the project this SCM uses.
-	 * 
+	 *
 	 * @return The name of the view.
 	 */
 	public String getViewname() {
@@ -285,7 +286,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the root folder name of our monitored workspace.
-	 * 
+	 *
 	 * @return The name of the folder.
 	 */
 	public String getFoldername() {
@@ -294,7 +295,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the username used to connect to starteam.
-	 * 
+	 *
 	 * @return The username.
 	 */
 	public String getUsername() {
@@ -303,7 +304,7 @@ public class StarTeamSCM extends SCM {
 
 	/**
 	 * Get the password used to connect to starteam.
-	 * 
+	 *
 	 * @return The password.
 	 */
 	public String getPassword() {

@@ -1,6 +1,7 @@
 package hudson.plugins.starteam.integration;
 
 import hudson.plugins.starteam.StarTeamConnection;
+import hudson.plugins.starteam.StarTeamFunctions;
 import hudson.plugins.starteam.StarTeamSCMException;
 import hudson.plugins.starteam.StarTeamViewSelector;
 
@@ -12,6 +13,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.starbase.starteam.Folder;
 
 public class StarTeamViewSelectorIntegrationTest {
 
@@ -52,7 +55,7 @@ public class StarTeamViewSelectorIntegrationTest {
 
 		labelName = System.getProperty("test.starteam.labelname", "hudsonTestLabel");
 		promotionName = System.getProperty("test.starteam.promotionname", "hudsonPromotionState");
-		changeDate = System.getProperty("test.starteam.changedate", "2010/7/14");
+		changeDate = System.getProperty("test.starteam.changedate", "2010/7/14 00:00:00");
 			
 		//create the default folder
 		parentDirectory = new File("hudson-temp-directory") ;
@@ -78,7 +81,8 @@ public class StarTeamViewSelectorIntegrationTest {
 		StarTeamViewSelector selector = new StarTeamViewSelector(null,null);
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize() ;
-		Collection<com.starbase.starteam.File> starteamFiles = starTeamConnection.findAllFiles(parentDirectory, System.out, true).values() ;
+		Folder rootFolder = starTeamConnection.getRootFolder();
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;
@@ -103,7 +107,8 @@ public class StarTeamViewSelectorIntegrationTest {
 		StarTeamViewSelector selector = new StarTeamViewSelector(labelName,"LABEL");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize() ;
-		Collection<com.starbase.starteam.File> starteamFiles = starTeamConnection.findAllFiles(parentDirectory, System.out, true).values() ;
+		Folder rootFolder = starTeamConnection.getRootFolder();
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;
@@ -117,7 +122,8 @@ public class StarTeamViewSelectorIntegrationTest {
 		StarTeamViewSelector selector = new StarTeamViewSelector(changeDate,"TIME");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize() ;
-		Collection<com.starbase.starteam.File> starteamFiles = starTeamConnection.findAllFiles(parentDirectory, System.out, true).values() ;
+		Folder rootFolder = starTeamConnection.getRootFolder();
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;
@@ -125,7 +131,7 @@ public class StarTeamViewSelectorIntegrationTest {
 
 	@Test (expected = com.starbase.starteam.ServerException.class)
 	public final void testTimeBeforeTime() throws ParseException, StarTeamSCMException {
-		StarTeamViewSelector selector = new StarTeamViewSelector("1970/1/1","TIME");
+		StarTeamViewSelector selector = new StarTeamViewSelector("1970/1/1 00:00:00","TIME");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize() ;
 		Assert.fail("Time before folder creation should cause exeception: 'The reference view is no longer available. Its root folder has been deleted from the parent view.'");
@@ -140,7 +146,8 @@ public class StarTeamViewSelectorIntegrationTest {
 		StarTeamViewSelector selector = new StarTeamViewSelector(promotionName,"PROMOTION");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize() ;
-		Collection<com.starbase.starteam.File> starteamFiles = starTeamConnection.findAllFiles(parentDirectory, System.out, true).values() ;
+		Folder rootFolder = starTeamConnection.getRootFolder();
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;

@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
 
 import com.starbase.starteam.File;
 import com.starbase.starteam.Folder;
@@ -28,7 +28,6 @@ import com.starbase.starteam.Status;
 import com.starbase.starteam.User;
 import com.starbase.starteam.UserAccount;
 import com.starbase.starteam.View;
-import com.starbase.starteam.ViewConfiguration;
 import com.starbase.util.OLEDate;
 
 /**
@@ -45,6 +44,8 @@ import com.starbase.util.OLEDate;
  */
 public class StarTeamConnection implements Serializable {
 	private static final long serialVersionUID = 1L;
+
+	public static final String FILE_POINT_FILENAME = "starteam-filepoints.csv";
 
 	private final String hostName;
 	private final int port;
@@ -93,6 +94,12 @@ public class StarTeamConnection implements Serializable {
 		this.configSelector = configSelector;
 	}
 
+	public StarTeamConnection(StarTeamConnection oldConnection, StarTeamViewSelector configSelector) {
+		this(oldConnection.hostName, oldConnection.port,
+				oldConnection.userName, oldConnection.password,
+				oldConnection.projectName, oldConnection.viewName,
+				oldConnection.folderName, configSelector);
+	}
 	private ServerInfo createServerInfo() {
 		ServerInfo serverInfo = new ServerInfo();
 		serverInfo.setConnectionType(ServerConfiguration.PROTOCOL_TCP_IP_SOCKETS);
@@ -163,13 +170,16 @@ public class StarTeamConnection implements Serializable {
 		view = findViewInProject(project, viewName);
 		if (configSelector != null)
 		{
+			View configuredView = null;
 			try {
-				view = configSelector.configView(view);
+				configuredView = configSelector.configView(view);
 			} catch (ParseException e) {
 				throw new StarTeamSCMException("Could not correctly parse configuration date: " + e.getMessage());
 			}
+			if (configuredView != null)
+				view = configuredView;
 		}
-		rootFolder = findFolderInView(view, folderName);
+		rootFolder = StarTeamFunctions.findFolderInView(view, folderName);
 
 		// Cache some folder data
 		final PropertyNames pnames = rootFolder.getPropertyNames();
@@ -181,22 +191,30 @@ public class StarTeamConnection implements Serializable {
 	/**
 	 * checkout the files from starteam
 	 *
-	 * @param filesToCheckOut
+	 * @param changeSet
+	 * @param buildFolder TODO
 	 * @throws IOException if checkout fails.
 	 */
-	public void checkOut(Collection<File> filesToCheckOut, PrintStream logger) throws IOException {
-		logger.println("*** Performing checkout");
-		for (File f : filesToCheckOut) {
+	public void checkOut(StarTeamChangeSet changeSet, PrintStream logger, java.io.File buildFolder) throws IOException {
+	    logger.println("*** Performing checkout on [" + changeSet.getFilesToCheckout().size() + "] files");
+	    boolean quietCheckout = changeSet.getFilesToCheckout().size() >= 2000;
+	    if (quietCheckout) {
+	      logger.println("*** More than 2000 files, quiet mode enabled");
+	    }
+		for (File f : changeSet.getFilesToCheckout()) {
+			boolean dirty = true;
 			switch (f.getStatus()) {
 				case Status.MERGE:
 				case Status.MODIFIED:
 				case Status.UNKNOWN:
 				case Status.NEW:
+					dirty = false;
 					// clobber these
 					new java.io.File(f.getFullName()).delete();
-				logger.println("[co] Deleted File: " + f.getFullName());
+				    if (!quietCheckout) logger.println("[co] Deleted File: " + f.getFullName());
 					break;
 				case Status.MISSING:
+					dirty = false;
 				case Status.OUTOFDATE:
 					// just go on and check out
 					break;
@@ -204,15 +222,50 @@ public class StarTeamConnection implements Serializable {
 					// By default do nothing, go to next iteration
 					continue;
 			}
-			logger.print("[co] " + f.getFullName() + "... \n");
-			f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
-					true, // use timestamp from local time
-					true, // convert EOL to native format
-					true); // update status
+			if (!quietCheckout)
+				logger.println("[co] " + f.getFullName() + "... attempt");
+			try {
+				f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
+						true, // use timestamp from local time
+						true, // convert EOL to native format
+						true); // update status
+			} catch (IOException e) {
+				logger
+						.print("[checkout] [exception] [Problem checking out file: "
+								+ f.getFullName()
+								+ "] \n"
+								+ ExceptionUtils.getFullStackTrace(e) + "\n");
+				throw e;
+			} catch (RuntimeException e) {
+				logger
+						.print("[checkout] [exception] [Problem checking out file: "
+								+ f.getFullName()
+								+ "] \n"
+								+ ExceptionUtils.getFullStackTrace(e) + "\n");
+				throw e;
+			}
+			if (dirty) {
+				changeSet.getChanges().add(FileToStarTeamChangeLogEntry(f));
+			}
 			f.discard();
-			// logger.println("ok");
+			if (!quietCheckout) logger.println("[co] " + f.getFullName() + "... ok");
 		}
-		// logger.println("*** done");
+		logger.println("*** removing [" + changeSet.getFilesToRemove().size() + "] files");
+		boolean quietDelete = changeSet.getFilesToRemove().size() > 100;
+		if (quietDelete) {
+			logger.println("*** More than 100 files, quiet mode enabled");
+		}
+		for (java.io.File f : changeSet.getFilesToRemove()) {
+			if (f.exists()) {
+				if (!quietDelete) logger.println("[remove] [" + f + "]");
+				f.delete();
+			} else {
+				logger.println("[remove:warn] Planned to remove [" + f + "]");
+			}
+		}
+		logger.println("*** storing change set");
+		StarTeamFilePointFunctions.storeCollection(new java.io.File(buildFolder, FILE_POINT_FILENAME), changeSet.getFilePointsToRemember());
+		logger.println("***checkout done");
 	}
 
 	/**
@@ -269,6 +322,10 @@ public class StarTeamConnection implements Serializable {
 		return "unknown";
 	}
 
+	public Folder getRootFolder() {
+		return rootFolder;
+	}
+
 	public OLEDate getServerTime() {
 		return server.getCurrentTime();
 	}
@@ -301,341 +358,6 @@ public class StarTeamConnection implements Serializable {
 			}
 		}
 		throw new StarTeamSCMException("Couldn't find view " + viewname + " in project " + project.getName());
-	}
-
-	/**
-	 * List all files in a given folder, create local subfolders if necessary,
-	 * and delete all local files that are not in starteam (deleted or moved) if
-	 * clearNoStarteamFiles is set to true.
-	 * 
-	 * @param folder
-	 *            The folder
-	 * @param clearNoStarteamFiles
-	 *            Whether or not to clear folder from file that are not in
-	 *            starteam.
-	 * @return a Map of Files, keyed on full pathname.
-	 */
-	private Map<String, File> listAllFiles(Folder folder, PrintStream logger, boolean clearNoStarteamFiles) {
-		//logger.println("*** Looking for versioned files in " + folder.getName());
-		Map<String, File> files = new HashMap<String, File>();
-		// If working directory doesn't exist, create it
-		java.io.File workdir = new java.io.File(folder.getPath());
-		if (!workdir.exists()) {
-			boolean success = workdir.mkdirs();
-			if ( !success ) {
-				logger.println("*** Creation of working directory failed : "
-						+ workdir.getAbsolutePath());
-			} else {
-				//logger.println("*** Creation of working directory suceeded : "
-				//		+ workdir.getAbsolutePath());
-			}
-		}
-		// list of all starteam files and folder names in the current folder
-		List<String> starteamFilesInDirectory = new ArrayList<String>();
-		// call for subfolders
-		for (Folder f : folder.getSubFolders()) {
-			starteamFilesInDirectory.add(f.getName());
-			files.putAll(listAllFiles(f, logger, clearNoStarteamFiles));
-		}
-		// find items in this folder
-		for (Item i : folder.getItems(folder.getView().getProject().getServer().getTypeNames().FILE)) {
-			File f = (com.starbase.starteam.File) i;
-			try {
-				// This sometimes throws... deep inside starteam =(
-				files.put(f.getParentFolderHierarchy() + f.getName(), f);
-				starteamFilesInDirectory.add(f.getName());
-			} catch (RuntimeException e) {
-				logger.println("Exception in listAllFiles: " + e.getLocalizedMessage());
-			}
-		}
-		// clear local files and directory that are not in starteam.
-		if (clearNoStarteamFiles) {
-			clearCurrentDirectoryOfNonStarteamFiles(starteamFilesInDirectory,
-					workdir);
-		}
-		folder.discard();
-		return files;
-	}
-
-	/**
-	 * clear directory of non starteam files (and delete non starteam folder
-	 * also)
-	 *
-	 * @param starteamFiles
-	 *            list of starteam files / directories names
-	 * @param workingDirectory
-	 *            local working directory
-	 */
-	private void clearCurrentDirectoryOfNonStarteamFiles(
-			List<String> starteamFiles, java.io.File workingDirectory) {
-
-		//pre-condition : if one of the param is null, or workingDirectory is not a directory, then return
-		if ( (starteamFiles == null) || (workingDirectory == null) || !(workingDirectory.isDirectory()) ) {
-			return ;
-		}
-
-		// find existing files in the current folder
-		java.io.File[] filesInFolder = workingDirectory.listFiles();
-		// check that all files in the current directory are in starteam
-		for (java.io.File currentFile : filesInFolder) {
-			// if starteam files doesn't contains one of the given file name,
-			// remove it
-			if (!starteamFiles.contains(currentFile.getName())) {
-				deleteFileOrDirectory(currentFile);
-			}
-
-		}
-	}
-
-	/**
-	 * recursive methods allowing to delete recursively directory or file
-	 *
-	 * @param aFileOrDirectory
-	 *            the file or directory to delete (recursively)
-	 */
-	private void deleteFileOrDirectory(java.io.File aFileOrDirectory) {
-		if (aFileOrDirectory.isDirectory()) {
-			// delete all chidren files and directories.
-			java.io.File[] childrens = aFileOrDirectory.listFiles();
-			for (java.io.File currentFile : childrens) {
-				deleteFileOrDirectory(currentFile);
-			}
-		}
-		aFileOrDirectory.delete();
-	}
-
-	/**
-	 * Recursively look for changes between two file lists.
-	 * 
-	 * @param thenFiles The list of files representing a past moment in time.
-	 * @param nowFiles The list of files representing "now".
-	 * @param logger The logger for logging output.
-	 * @return a Collection of File objects that have changed since date.
-	 */
-	private Collection<File> getFileSetDifferences(Map<String, File> thenFiles, Map<String, File> nowFiles, PrintStream logger) {
-		List<File> files = new ArrayList<File>();
-		// Iterate over all files in the "now" set
-		for (Map.Entry<String, File> e : nowFiles.entrySet()) {
-			File nowFile = e.getValue();
-			// Check if the file existed "then"
-			if (thenFiles.containsKey(e.getKey())) {
-				File thenFile = thenFiles.get(e.getKey());
-				// File exists in the past revision as well
-				if (thenFile.getRevisionNumber() < nowFile.getRevisionNumber()) {
-					// revision number has increased, add it to changes
-					logger.println("[modified] " + nowFile.getFullName());
-					files.add(nowFile);
-				} else if (!nowFile.getLocalFileExists()) {
-					// File not modified but local missing,
-					// add to change list
-					logger.println("[local missing] " + nowFile.getFullName());
-					files.add(nowFile);
-				} else {
-					// File not modified, discard metadata
-					//logger.println("[hit] " + nowFile.getFullName());
-					nowFile.discard();
-				}
-				// discard and remove from "then" files
-				thenFile.discard();
-				thenFiles.remove(e.getKey());
-			} else {
-				// File is new
-				logger.println("[new] " + nowFile.getFullName());
-				files.add(nowFile);
-			}
-		}
-		// Iterate over all remaining files in the "then" set:
-		// only files that have been deleted from the repo
-		// since "then" remain, therefore we'll report those
-		// as changes too.
-		for (Map.Entry<String, File> e : thenFiles.entrySet()) {
-			logger.println("[deleted] " + e.getValue().getFullName());
-			files.add((File) e.getValue());
-		}
-
-		return files;
-	}
-
-	/**
-	 * Find the given folder in the given view.
-	 * 
-	 * @param view The view to look in.
-	 * @param foldername The view-relative path of the folder to look for.
-	 * @return The folder or null if a folder by the given name was not found.
-	 * @throws StarTeamSCMException
-	 */
-	private Folder findFolderInView(final View view, final String foldername) throws StarTeamSCMException {
-		// Check the root folder of the view
-		if (view.getName().equals(foldername)) {
-			return view.getRootFolder();
-		}
-
-		// Create a File object with the folder name for system-
-		// independent matching
-		java.io.File thefolder = new java.io.File(foldername);
-
-		// Search for the folder in subfolders
-		Folder result = findFolderRecursively(view.getRootFolder(), thefolder);
-		if (result == null) {
-			throw new StarTeamSCMException("Couldn't find folder " + foldername + " in view " + view.getName());
-		}
-		return result;
-	}
-
-	/**
-	 * Do a breadth-first search for a folder with the given name, starting with
-	 * children of the provided folder.
-	 * 
-	 * @param folder the folder whose children to check
-	 * @param thefolder the folder to look for
-	 * @return found folder
-	 */
-	private Folder findFolderRecursively(Folder folder, java.io.File thefolder) {
-		// Check subfolders, breadth first. checkLater is a collection
-		// of folders that didn't match, therefore their children
-		// will be checked next.
-		Collection<Folder> checkLater = new ArrayList<Folder>();
-		for (Folder f : folder.getSubFolders()) {
-			// Compare pathnames. The getFolderHierarchy call returns
-			// the full folder name (including root folder name which
-			// is the same as the view name) terminated by the
-			// platform-specific separator.
-			if (f.getFolderHierarchy().equals(thefolder.getPath() + java.io.File.separator)) {
-				return f;
-			} else {
-				// add to list of folders whose children will be checked
-				checkLater.add(f);
-			}
-		}
-		// recurse unto children
-		for (Folder f : checkLater) {
-			Folder result = findFolderRecursively(f, thefolder);
-			if (result != null) {
-				return result;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * return the list of all files for the current starteam connection.
-	 *
-	 * @param workspace
-	 *            root of local folder
-	 * @param logger
-	 *            logger used to log events
-	 * @param clearNoStarteamFiles
-	 *            whether or not deleting local file / directory that are not in
-	 *            starteam.
-	 * @return a map containing full file name and the corresponding starteam
-	 *         object file.
-	 */
-	public Map<String, File> findAllFiles(java.io.File workspace,
-			PrintStream logger, boolean clearNoStarteamFiles) {
-		logger.println("*** Get list of all files for " + workspace);
-
-		// set root folder
-		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
-
-		// Get a list of all files
-		Map<String, File> nowFiles = listAllFiles(rootFolder, logger,
-				clearNoStarteamFiles);
-
-		logger.println("*** done");
-		return nowFiles;
-	}
-
-	/**
-	 * find all changed files in starteam since a given date. this method create
-	 * a list of all current files. and then call the overloaded method with a
-	 * list of current files.
-	 *
-	 * @param workspace
-	 *            local root directory.
-	 * @param logger
-	 *            logger allowing to log event to the console.
-	 * @param fromDate
-	 *            date of comparison.
-	 * @return collection of modified starteam files.
-	 */
-	public Collection<File> findChangedFiles(java.io.File workspace, PrintStream logger, Date fromDate) {
-		boolean clearNoStarteamFiles = false;
-		// set root folder
-		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
-		// Get a list of all files
-		logger.println("Fetching current files:");
-		Map<String, File> nowFiles = listAllFiles(rootFolder, logger,
-				clearNoStarteamFiles);
-		return findChangedFiles(nowFiles, workspace, logger, fromDate);
-	}
-
-	/**
-	 * Find all changed files in starteam since a given date.
-	 *
-	 * @param nowFiles
-	 *            list of all current starteam files.
-	 * @param workspace
-	 *            local root directory.
-	 * @param logger
-	 *            logger allowing to log event to the console.
-	 * @param fromDate
-	 *            date of comparison.
-	 * @return collection of modified starteam files.
-	 */
-	public Collection<File> findChangedFiles(Map<String, File> nowFiles, java.io.File workspace, PrintStream logger, Date fromDate) {
-		boolean clearNoStarteamFiles = false;
-		logger.println("*** Looking for changed files since " + fromDate);
-		// set root folder
-		rootFolder.setAlternatePathFragment(workspace.getAbsolutePath());
-		// Create OLEDate to represent last build time
-		OLEDate oleSince = new OLEDate(fromDate);
-		// Create a view to represent last build time
-		View sinceView = new View(view, ViewConfiguration.createFromTime(oleSince));
-
-		// This list will contain the changed files
-		Collection<File> changedFiles = null;
-
-		Folder sinceFolder = null;
-		Map<String, File> sinceFiles = null;
-		try {
-			sinceFolder = findFolderInView(sinceView, folderName);
-			sinceFolder.setAlternatePathFragment(workspace.getAbsolutePath());
-			logger.println("Fetching files at " + fromDate);
-			sinceFiles = listAllFiles(sinceFolder, logger, clearNoStarteamFiles);
-			logger.println("done");
-			logger.println("Comparing");
-			changedFiles = getFileSetDifferences(sinceFiles, nowFiles, logger);
-			logger.println("done");
-		} catch (StarTeamSCMException e) {
-			logger.println("Caught exception: " + e.getLocalizedMessage());
-			// Folder not found? That means that every file is a change
-			changedFiles = nowFiles.values();
-		}
-
-		logger.println("*** done");
-		return changedFiles;
-	}
-
-	/**
-	 * synchronize last build date with starteam server timezone.
-	 *
-	 * @param aPreviousBuildDate
-	 *            the previous Hudson's build date.
-	 * @param aCurrentBuildDate
-	 *            hudson's current build date
-	 * @return corresponding starteam previous build date.
-	 */
-	public Date calculatePreviousDateWithTimeZoneCheck(Date aPreviousBuildDate,
-			Date aCurrentBuildDate) {
-		OLEDate starteamServerTime = getServerTime();
-		long starteamDateLongValue = starteamServerTime.getLongValue();
-		long buildServerDateLongValue = aCurrentBuildDate.getTime();
-		// time diff between starteam server and current server
-		long timeDiff = starteamDateLongValue - buildServerDateLongValue;
-		long lastBuildDateLongValue = aPreviousBuildDate.getTime();
-		long lastStarteamDateLongValue = timeDiff + lastBuildDateLongValue;
-		Date synchLastBuildDate = new Date(lastStarteamDateLongValue);
-		return synchLastBuildDate;
 	}
 
 	/**
@@ -681,5 +403,67 @@ public class StarTeamConnection implements Serializable {
 	public String toString() {
 		return "host: " + hostName + ", port: " + Integer.toString(port) + ", user: " + userName + ", passwd: ******, project: " +
 				projectName + ", view: " + viewName + ", folder: " + folderName;
+	}
+
+	  /**
+	 * @param rootFolder Map of all project directories
+	 * @param workspace a workspace directory
+	 * @param filePointFile a file containing previous File Point description
+	 * @param logger a logger for consuming log messages
+	 * @return set of changes  
+	 * @throws StarTeamSCMException
+	 * @throws IOException
+	 */
+	public StarTeamChangeSet computeChangeSet(Folder rootFolder, java.io.File workspace, final Collection<StarTeamFilePoint> historicStarteamFilePoint, PrintStream logger) throws StarTeamSCMException, IOException {
+		//Folder rootFolder = getRootFolder();
+	    // --- compute changes as per starteam
+
+	    final Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, workspace);
+	    final Map<java.io.File, com.starbase.starteam.File> starteamFileMap = StarTeamFilePointFunctions.convertToFileMap(starteamFiles);
+	    final Collection<java.io.File> starteamFileSet = starteamFileMap.keySet();
+	    final Collection<StarTeamFilePoint> starteamFilePoint = StarTeamFilePointFunctions.convertFilePointCollection(starteamFiles);
+
+	    final Collection<java.io.File> fileSystemFiles = StarTeamFilePointFunctions.listAllFiles(workspace);
+	    final Collection<java.io.File> fileSystemRemove = new TreeSet<java.io.File>(fileSystemFiles);
+	    fileSystemRemove.removeAll(starteamFileSet);
+
+	    final StarTeamChangeSet changeSet = new StarTeamChangeSet();
+	    changeSet.setFilesToCheckout(starteamFiles);
+	    changeSet.setFilesToRemove(fileSystemRemove);
+	    changeSet.setFilePointsToRemember(starteamFilePoint);
+
+	    // --- compute differences as per historic storage file
+
+	    if (historicStarteamFilePoint != null && !historicStarteamFilePoint.isEmpty()) {
+
+	      try {
+
+	        changeSet.setComparisonAvailable(true);
+
+	        StarTeamFilePointFunctions.computeDifference(starteamFilePoint, historicStarteamFilePoint, changeSet);
+
+	      } catch (Throwable t) {
+	        t.printStackTrace(logger);
+	      }
+	    } else {
+	    	for (File file: starteamFiles)
+	    	{
+	    		changeSet.addeChange(FileToStarTeamChangeLogEntry(file));
+	    	}
+	    }
+
+	    return changeSet;
+	  }
+
+	public StarTeamChangeLogEntry FileToStarTeamChangeLogEntry (File f)
+	{
+		int revisionNumber = f.getContentVersion();
+		int userId = f.getModifiedBy();
+		String username = getUsername(userId);
+		String msg = f.getComment();
+		Date date = new Date(f.getModifiedTime().getLongValue());
+		String fileName = f.getFullName();		
+
+		return new StarTeamChangeLogEntry(fileName,revisionNumber,date,username,msg, "change");
 	}
 }

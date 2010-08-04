@@ -2,6 +2,7 @@ package hudson.plugins.starteam;
 
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
+import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.remoting.VirtualChannel;
 
@@ -14,7 +15,9 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Map;
+//import java.util.Map;
+
+import com.starbase.starteam.Folder;
 
 /**
  * A helper class for transparent checkout operations over the network. Can be
@@ -33,7 +36,6 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	private static final long serialVersionUID = -3748818546244161292L;
 
 	private final Date previousBuildDate;
-	private final Date currentBuilddDate;
 	private final FilePath changelog;
 	private final BuildListener listener;
 	private final String hostname;
@@ -44,6 +46,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	private final String viewname;
 	private final String foldername;
 	private final StarTeamViewSelector config;
+	private final AbstractBuild<?,?> build;
 
 	/**
 	 * 
@@ -77,7 +80,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
 			String foldername, StarTeamViewSelector config, Date previousBuildDate, Date currentBuildDate,
-			FilePath changelogFile, BuildListener listener) {
+			FilePath changelogFile, BuildListener listener,	AbstractBuild build ) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -86,10 +89,10 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		this.viewname = viewname;
 		this.foldername = foldername;
 		this.previousBuildDate = previousBuildDate;
-		this.currentBuilddDate = currentBuildDate;
 		this.changelog = changelogFile;
 		this.listener = listener;
 		this.config = config;
+		this.build = build;
 	}
 
 	/*
@@ -109,22 +112,28 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 			listener.getLogger().println(e.getLocalizedMessage());
 			return false;
 		}
-
-		boolean clearNoStarteamFiles = true;
+		
 		// Get a list of files that require updating
-		Map<String, com.starbase.starteam.File> nowFiles = connection
-				.findAllFiles(workspace, listener.getLogger(),
-						clearNoStarteamFiles);
-		// Check 'em out
-		listener.getLogger().println("performing checkout ...");
-		connection.checkOut(nowFiles.values(), listener.getLogger());
-
-		listener.getLogger().println("creating change log file ");
+		Collection<StarTeamFilePoint> historicFilePoints = null;
+		Folder rootFolder = connection.getRootFolder();
+		StarTeamChangeSet changeSet;
 		try {
-			createChangeLog(nowFiles, workspace, changelog, listener,
-					this.previousBuildDate, connection);
-		} catch (InterruptedException e) {
-			listener.getLogger().println( "unable to create changelog file " +  e.getMessage()) ;
+			changeSet = connection.computeChangeSet(rootFolder,workspace,historicFilePoints,listener.getLogger());
+			// Check 'em out
+			listener.getLogger().println("performing checkout ...");
+			File buildDir = ( build != null )?  build.getRootDir() : workspace; 
+
+			connection.checkOut(changeSet, listener.getLogger(), buildDir);
+
+			listener.getLogger().println("creating change log file ");
+			try {
+				createChangeLog(changeSet, workspace, changelog, listener,
+						this.previousBuildDate, connection);
+			} catch (InterruptedException e) {
+				listener.getLogger().println( "unable to create changelog file " +  e.getMessage()) ;
+			}
+		} catch (StarTeamSCMException e1) {
+			e1.printStackTrace(listener.getLogger());
 		}
 		// close the connection
 		connection.close();
@@ -151,7 +160,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 * @throws InterruptedException 
 	 */
 	protected boolean createChangeLog(
-			Map<String, com.starbase.starteam.File> aNowFiles, File aRootFile,
+			StarTeamChangeSet changes, File aRootFile,
 			FilePath aChangelogFile, BuildListener aListener, Date aLastBuildDate,
 			StarTeamConnection aConnection) throws IOException, InterruptedException {
 
@@ -170,21 +179,9 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		OutputStream os = new BufferedOutputStream(
 				aChangelogFile.write());
 
-		// synchronize previous build date from server with starteam date
-		Date synchronizedStarteamPreviousBuildDate = aConnection
-				.calculatePreviousDateWithTimeZoneCheck(aLastBuildDate,
-						this.currentBuilddDate);
-		
 		boolean created = false;
-		Collection<com.starbase.starteam.File> changes = null;
 		try {
-			listener.getLogger().println(
-					"searching for changed file since " + aLastBuildDate);
-			changes = aConnection.findChangedFiles(aNowFiles, aRootFile,
-					listener.getLogger(), synchronizedStarteamPreviousBuildDate);
-
-			created = StarTeamChangeLogBuilder.writeChangeLog(os, changes,
-					aConnection);
+			created = StarTeamChangeLogBuilder.writeChangeLog(os, changes);
 		} catch (Exception ex) {
 			listener.getLogger().println(
 					"change log creation failed due to unexpected error : "

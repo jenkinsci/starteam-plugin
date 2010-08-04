@@ -1,19 +1,21 @@
 package hudson.plugins.starteam;
 
-import hudson.FilePath;
-import hudson.Launcher;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Result;
 import hudson.model.StreamBuildListener;
 import hudson.model.TaskListener;
+import hudson.model.User;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCMDescriptor;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import javax.servlet.ServletException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -107,13 +109,36 @@ public class StarTeamSCMTest extends HudsonTestCase {
         FreeStyleProject project = createFreeStyleProject();
         StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
         project.setScm(scm);
-
         // config roundtrip
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));
 
         FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserCause()).get();
         System.out.println(build.getLog(LOG_LIMIT));
         assertBuildStatus(Result.SUCCESS,build);
+        FreeStyleBuild lastBuild =project.getLastBuild();
+        Set<User> commiters = lastBuild.getCulprits();
+        
+        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"Before", promotionState) ;
+        project.setScm(scm);
+        submit(new WebClient().getPage(project,"configure").getFormByName("config"));
+
+        build = project.scheduleBuild2(0, new Cause.UserCause()).get();
+        System.out.println(build.getLog(LOG_LIMIT));
+        assertBuildStatus(Result.SUCCESS,build);
+        lastBuild =project.getLastBuild();
+        commiters = lastBuild.getCulprits();
+        
+        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"After", promotionState) ;
+        project.setScm(scm);
+        submit(new WebClient().getPage(project,"configure").getFormByName("config"));
+
+        build = project.scheduleBuild2(0, new Cause.UserCause()).get();
+        
+        System.out.println(build.getLog(LOG_LIMIT));
+        assertBuildStatus(Result.SUCCESS,build);
+        lastBuild =project.getLastBuild();
+        commiters = lastBuild.getCulprits();
+        
     }
 	
 	/*
@@ -145,16 +170,23 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	 *      hudson.Launcher, hudson.FilePath, hudson.model.TaskListener)
 	 */
 	@Test
-	public void testPollChanges() throws IOException, InterruptedException, ReactorException {
+	public void testPollChanges() throws Exception {
 		
-		FreeStyleProject proj = createFreeStyleProject();
-		proj.setScm(t);
-		final Launcher launcher = null;
-		File localPath = new File("tmp.workspace");
-		final FilePath workspace = new FilePath(localPath );
+		FreeStyleProject project = createFreeStyleProject();
+		project.setScm(t);
+
 		final TaskListener listener = new StreamBuildListener (System.out,Charset.forName("UTF-8"));
-		boolean status = t.pollChanges( proj,launcher, workspace,listener) ;
-		assertFalse(status);
+
+		FreeStyleBuild build = project.scheduleBuild2(0, new Cause.UserCause()).get();
+
+		System.out.println(build.getLog(LOG_LIMIT));
+		assertBuildStatus(Result.SUCCESS,build);
+		FreeStyleBuild lastBuild = project.getLastBuild();
+
+		// polling right after a build should not find any changes.
+		boolean result = project.pollSCMChanges(listener);
+
+		assertFalse(result);
 	}
 
 	/*

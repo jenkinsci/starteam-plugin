@@ -4,11 +4,13 @@
 package hudson.plugins.starteam;
 
 import hudson.FilePath.FileCallable;
+import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 
 /**
@@ -48,6 +50,8 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 	private final StarTeamViewSelector config;
 
+	private AbstractBuild lastBuild;
+
 	/**
 	 * Default constructor.
 	 * @param hostname starteam host name
@@ -61,10 +65,11 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param sinceDate starteam last build date
 	 * @param currentDate starteam current date
 	 * @param listener Hudson task listener.
+	 * @param lastBuild 
 	 */
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, Date sinceDate, Date currentDate, TaskListener listener) {
+			String foldername, StarTeamViewSelector config, Date sinceDate, Date currentDate, TaskListener listener, AbstractBuild lastBuild) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -76,6 +81,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		this.sinceDate = sinceDate;
 		this.currentDate = currentDate;
 		this.config = config;
+		this.lastBuild=lastBuild;
 	}
 
 	/*
@@ -85,10 +91,6 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 *      hudson.remoting.VirtualChannel)
 	 */
 	public Boolean invoke(File f, VirtualChannel channel) throws IOException {
-
-		if (sinceDate == null) {
-			return false ;
-		}
 
 		StarTeamConnection connection = new StarTeamConnection(
 				hostname, port, user, passwd,
@@ -100,15 +102,26 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 			connection.close();
 			return false;
 		}
-		Date synchronizedSinceDate = connection
-				.calculatePreviousDateWithTimeZoneCheck(sinceDate, currentDate);
-		if (connection.findChangedFiles(f, listener.getLogger(),
-				synchronizedSinceDate).isEmpty()) {
-			connection.close();
-			return false;
+
+		Collection<StarTeamFilePoint> historicFilePoints = null;
+		if (lastBuild != null){
+			File filePointFile = new File(lastBuild.getRootDir(),StarTeamConnection.FILE_POINT_FILENAME);
+			if(filePointFile.exists() ) {
+	          historicFilePoints = StarTeamFilePointFunctions.loadCollection(filePointFile);
+			}
+	    }
+		
+		StarTeamChangeSet changeSet = null;
+		try {
+			changeSet = connection.computeChangeSet(connection.getRootFolder(), f, historicFilePoints , listener.getLogger());
+		} catch (StarTeamSCMException e) {
+			e.printStackTrace(listener.getLogger());
 		}
 		connection.close();
-		return true;
+		if (changeSet != null && changeSet.hasChanges()) {
+			return true;
+		}
+		return false;
 	}
 
 }
