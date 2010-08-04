@@ -468,7 +468,7 @@ public class StarTeamConnection implements Serializable {
 		String username = getUsername(userId);
 		String msg = f.getComment();
 		Date date = new Date(f.getModifiedTime().getLongValue());
-		String fileName = f.getFullName();		
+		String fileName = f.getName();		
 
 		return new StarTeamChangeLogEntry(fileName,revisionNumber,date,username,msg, change);
 	}
@@ -514,7 +514,7 @@ public class StarTeamConnection implements Serializable {
 	
 		  for (java.io.File f : historicOnly) {
 			  StarTeamFilePoint historic = historicFilePointMap.get(f);
-			  change = new StarTeamChangeLogEntry(historic.getFullfilepath(), historic.getRevisionNumber(), new Date(), "", "", "removed");
+			  change = new StarTeamChangeLogEntry(f.getName(), historic.getRevisionNumber(), new Date(), "", "", "removed");
 			  changeSet.addChange(change);
 		  }
 		  for (java.io.File f : starteamOnly) {
