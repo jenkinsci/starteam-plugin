@@ -11,7 +11,6 @@ import hudson.remoting.VirtualChannel;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Date;
 
 /**
  * This Actor class allow to check for changes in starteam repository between
@@ -43,10 +42,6 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	private String foldername;
 
 	private final TaskListener listener;
-	
-	private final Date sinceDate;
-
-	private final Date currentDate;
 
 	private final StarTeamViewSelector config;
 
@@ -62,14 +57,12 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param viewname  starteam view name
 	 * @param foldername starteam parent folder name
 	 * @param config configuration selector
-	 * @param sinceDate starteam last build date
-	 * @param currentDate starteam current date
 	 * @param listener Hudson task listener.
 	 * @param lastBuild 
 	 */
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, Date sinceDate, Date currentDate, TaskListener listener, AbstractBuild lastBuild) {
+			String foldername, StarTeamViewSelector config, TaskListener listener, AbstractBuild lastBuild) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -78,8 +71,6 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		this.viewname = viewname;
 		this.foldername = foldername;
 		this.listener = listener;
-		this.sinceDate = sinceDate;
-		this.currentDate = currentDate;
 		this.config = config;
 		this.lastBuild=lastBuild;
 	}

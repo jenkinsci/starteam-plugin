@@ -35,6 +35,7 @@ public class StarTeamViewSelectorTest {
 	 */
 	@Test (expected = NullPointerException.class )
 	public final void testNullTime() throws ParseException {
+		@SuppressWarnings("unused")
 		StarTeamViewSelector selector = new StarTeamViewSelector(null,"TIME");
 		fail("Null Time Should not be accepted");
 	}
@@ -44,6 +45,7 @@ public class StarTeamViewSelectorTest {
 	 */
 	@Test (expected = ParseException.class )
 	public final void testEmptyTime() throws ParseException {
+		@SuppressWarnings("unused")
 		StarTeamViewSelector selector = new StarTeamViewSelector("","TIME");
 		fail("Empty Time Should not be accepted");
 	}

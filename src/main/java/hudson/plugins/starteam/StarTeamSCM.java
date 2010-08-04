@@ -6,7 +6,6 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCM;
@@ -129,7 +128,7 @@ public class StarTeamSCM extends SCM {
 		
 		// Create an actor to do the checkout, possibly on a remote machine
 		StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-				port, user, passwd, projectname, viewname, foldername, config, previousBuildDate, currentBuildDate, changeLogFilePath, listener, build);
+				port, user, passwd, projectname, viewname, foldername, config, changeLogFilePath, listener, build);
 		if (workspace.act(co_actor)) {
 			// change log is written during checkout (only one pass for
 			// comparison)
@@ -174,18 +173,13 @@ public class StarTeamSCM extends SCM {
 			final TaskListener listener) throws IOException,
 			InterruptedException {
 		boolean status = false;
-		Run<?, ?> run = proj.getLastBuild();
 		AbstractBuild<?,?> lastBuild = (AbstractBuild<?, ?>) proj.getLastBuild();
-		Date sinceDate = null;
-		if ( run != null) {
-		    sinceDate= run.getTimestamp().getTime();
-		}
-		Date currentServerDate = new Date();
+
 		// Create an actor to do the polling, possibly on a remote machine
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
 				user, passwd, projectname, viewname, foldername,
-				config, sinceDate,
-				currentServerDate, listener, lastBuild);
+				config, listener,
+				lastBuild);
 		if (workspace.act(p_actor)) {
 			status = true;
 		} else {

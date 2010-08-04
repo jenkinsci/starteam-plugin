@@ -1,11 +1,5 @@
 package hudson.plugins.starteam.integration;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-
 import hudson.plugins.starteam.StarTeamChangeLogEntry;
 import hudson.plugins.starteam.StarTeamChangeSet;
 import hudson.plugins.starteam.StarTeamConnection;
@@ -14,9 +8,13 @@ import hudson.plugins.starteam.StarTeamFunctions;
 import hudson.plugins.starteam.StarTeamSCMException;
 import hudson.plugins.starteam.StarTeamViewSelector;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Collection;
+
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.starbase.starteam.Folder;

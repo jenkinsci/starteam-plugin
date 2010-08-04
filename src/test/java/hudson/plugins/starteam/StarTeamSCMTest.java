@@ -10,16 +10,12 @@ import hudson.model.User;
 import hudson.scm.ChangeLogParser;
 import hudson.scm.SCMDescriptor;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
-import javax.servlet.ServletException;
-
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.jvnet.hudson.reactor.ReactorException;
 import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.HudsonTestCase;
 
@@ -117,6 +113,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
         assertBuildStatus(Result.SUCCESS,build);
         FreeStyleBuild lastBuild =project.getLastBuild();
         Set<User> commiters = lastBuild.getCulprits();
+        Assert.assertNotNull(commiters);
+        Assert.assertFalse(commiters.isEmpty());
         
         scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"Before", promotionState) ;
         project.setScm(scm);
@@ -127,6 +125,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
         assertBuildStatus(Result.SUCCESS,build);
         lastBuild =project.getLastBuild();
         commiters = lastBuild.getCulprits();
+        Assert.assertNotNull(commiters);
+        Assert.assertFalse(commiters.isEmpty());
         
         scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"After", promotionState) ;
         project.setScm(scm);
@@ -138,6 +138,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
         assertBuildStatus(Result.SUCCESS,build);
         lastBuild =project.getLastBuild();
         commiters = lastBuild.getCulprits();
+        Assert.assertNotNull(commiters);
+        Assert.assertFalse(commiters.isEmpty());
         
     }
 	
@@ -182,6 +184,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 		System.out.println(build.getLog(LOG_LIMIT));
 		assertBuildStatus(Result.SUCCESS,build);
 		FreeStyleBuild lastBuild = project.getLastBuild();
+		assertNotNull(lastBuild);
 
 		// polling right after a build should not find any changes.
 		boolean result = project.pollSCMChanges(listener);

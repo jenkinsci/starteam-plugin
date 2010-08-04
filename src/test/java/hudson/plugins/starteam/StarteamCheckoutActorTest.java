@@ -81,7 +81,7 @@ public class StarteamCheckoutActorTest {
 		}
 		
 		AbstractBuild<?,?> build = null;
-		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, aPreviousBuildDate, new Date(), changeLogFilePath, listener, build) ;
+		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, changeLogFilePath, listener, build) ;
 
 		return starTeamCheckoutActor ;
 	}

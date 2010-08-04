@@ -14,7 +14,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.Date;
 //import java.util.Map;
 
 import com.starbase.starteam.Folder;
@@ -35,7 +34,6 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 */
 	private static final long serialVersionUID = -3748818546244161292L;
 
-	private final Date previousBuildDate;
 	private final FilePath changelog;
 	private final BuildListener listener;
 	private final String hostname;
@@ -68,10 +66,6 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 * 		starteam folder name
 	 * @param config
 	 * 		configuration selector
-	 * @param previousBuildDate
-	 * 		hudson previous build date
-	 * @param currentBuildDate
-	 * 		hudson current date
 	 * @param changelogFile
 	 * 		change log file, as a filepath, to be able to write remotely.
 	 * @param listener
@@ -79,8 +73,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 */
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, Date previousBuildDate, Date currentBuildDate,
-			FilePath changelogFile, BuildListener listener,	AbstractBuild build ) {
+			String foldername, StarTeamViewSelector config, FilePath changelogFile, BuildListener listener,
+			AbstractBuild build ) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -88,7 +82,6 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		this.projectname = projectname;
 		this.viewname = viewname;
 		this.foldername = foldername;
-		this.previousBuildDate = previousBuildDate;
 		this.changelog = changelogFile;
 		this.listener = listener;
 		this.config = config;
@@ -128,7 +121,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 			listener.getLogger().println("creating change log file ");
 			try {
 				createChangeLog(changeSet, workspace, changelog, listener,
-						this.previousBuildDate, connection);
+						connection);
 			} catch (InterruptedException e) {
 				listener.getLogger().println( "unable to create changelog file " +  e.getMessage()) ;
 			}
@@ -142,16 +135,12 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 
 	/**
 	 * create the change log file.
-	 * @param aNowFiles
-	 * 		list of current starteam files (loaded during checkout)
 	 * @param aRootFile
 	 * 		starteam root file
 	 * @param aChangelogFile
 	 * 		the file containing changes
 	 * @param aListener
 	 * 		the build listener
-	 * @param aLastBuildDate
-	 * 		the last hudson build date (synchronized with starteam server date)
 	 * @param aConnection
 	 * 		the starteam connection.
 	 * @return
@@ -161,12 +150,11 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	 */
 	protected boolean createChangeLog(
 			StarTeamChangeSet changes, File aRootFile,
-			FilePath aChangelogFile, BuildListener aListener, Date aLastBuildDate,
-			StarTeamConnection aConnection) throws IOException, InterruptedException {
+			FilePath aChangelogFile, BuildListener aListener, StarTeamConnection aConnection) throws IOException, InterruptedException {
 
 
 		// create empty change log during call.
-		if (aLastBuildDate == null) {
+		if (changes == null) {
 			listener
 					.getLogger()
 					.println(
