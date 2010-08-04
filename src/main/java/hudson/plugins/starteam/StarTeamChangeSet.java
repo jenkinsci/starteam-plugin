@@ -1,8 +1,9 @@
 package hudson.plugins.starteam;
 
-import com.starbase.starteam.File;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import java.util.*;
+import com.starbase.starteam.File;
 
 /**
  * The collection of actions that need to be performed upon checkout.
@@ -16,6 +17,8 @@ import java.util.*;
  *    the previous build when various different labelling strategies are being used (e.g. promotion
  *    states, etc).  For this reason we persist a list of the filepoints used upon checkout in the
  *    build folder.  This is then used to compare current v.s. historic and compute the changelist.
+ *
+ * Changes to log: LogEntries for changes. This is information to be written to change log
  */
 public class StarTeamChangeSet {
 
@@ -64,7 +67,7 @@ public class StarTeamChangeSet {
   public void setComparisonAvailable(boolean comparisonAvailable) {
     this.comparisonAvailable = comparisonAvailable;
   }
-  public void addeChange(StarTeamChangeLogEntry value) {
+  public void addChange(StarTeamChangeLogEntry value) {
 	  changes.add(value);
   }
 
@@ -72,79 +75,10 @@ public class StarTeamChangeSet {
 	   return changes;
 	}
 
-  @Deprecated
-  public void setAdded(Collection<StarTeamFilePoint> value) {
-	  // added = new TreeSet<StarTeamFilePoint>(value);
-//	  for (StarTeamFilePoint file : value)
-//	  {
-//		  StarTeamChangeLogEntry e = new StarTeamChangeLogEntry();
-//		  changes.add(e);
-//	  }
-  }
-@Deprecated
-  public void setHigher(Collection<StarTeamFilePoint> value) {
-    //higher = new TreeSet<StarTeamFilePoint>(value);
-  }
-
-@Deprecated
-  public void setLower(Collection<StarTeamFilePoint> value) {
-    //lower = new TreeSet<StarTeamFilePoint>(value);
-  }
-
-@Deprecated
-  public void setDelete(Collection<StarTeamFilePoint> value) {
-    //delete = new TreeSet<StarTeamFilePoint>(value);
-  }
-
-@Deprecated
-  public void setDirty(Collection<StarTeamFilePoint> value) {
-    //dirty = new TreeSet<StarTeamFilePoint>(value);
-  }
-
-//  public Set<StarTeamFilePoint> getAdded() {
-//    return added;
-//  }
-//
-//  public Set<StarTeamFilePoint> getHigher() {
-//    return higher;
-//  }
-//
-//  public Set<StarTeamFilePoint> getLower() {
-//    return lower;
-//  }
-//
-//  public Set<StarTeamFilePoint> getDelete() {
-//    return delete;
-//  }
-//
-//
-//  public Set<StarTeamFilePoint> getDirty() {
-//    return dirty;
-//  }
-
   @Override
   public String toString() {
     final StringBuffer buffer = new StringBuffer();
     buffer.append( " changes: " ).append( changes.size() );
-//    if (added != null) {
-//      buffer.append( " added: " ).append( added.size() );
-//    }
-//
-//    if (higher != null) {
-//      buffer.append( " higher: " ).append( higher.size() );
-//    }
-//
-//    if (lower != null) {
-//      buffer.append( " lower: " ).append( lower.size() );
-//    }
-//
-//    if (delete != null) {
-//      buffer.append( " delete: " ).append( delete.size() );
-//    }
-//
-//    if (dirty != null) {
-//      buffer.append( " dirty: " ).append( dirty.size() );
-//    }
     return buffer.toString();
   }
 }

@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-//import java.io.PrintStream;
+import java.util.TreeMap;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -149,6 +149,14 @@ public class StarTeamFunctions {
       }
     }
     return folderMap;
+  }
+
+public static Map<java.io.File,com.starbase.starteam.File> convertToFileMap(final Collection<com.starbase.starteam.File> collection) {
+    Map<java.io.File,com.starbase.starteam.File> result = new TreeMap<java.io.File,com.starbase.starteam.File>();
+    for (com.starbase.starteam.File f:collection) {
+      result.put(new java.io.File(f.getFullName()),f);
+    }
+    return result;
   }
 
 }

@@ -23,9 +23,9 @@ public class StarTeamChangeLogSet extends ChangeLogSet<StarTeamChangeLogEntry> {
 	 * default constructor for log set.
 	 * 
 	 * @param aBuild
-	 * 		the build.
+	 * 		the build associated with changes.
 	 * @param logs
-	 * 		all logs entry.
+	 * 		all log entries.
 	 */
 	public StarTeamChangeLogSet(AbstractBuild<?, ?> aBuild,
 			List<StarTeamChangeLogEntry> logs) {

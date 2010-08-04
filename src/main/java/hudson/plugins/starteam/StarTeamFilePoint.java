@@ -22,21 +22,9 @@ public class StarTeamFilePoint implements Serializable, Comparable {
 
 	public StarTeamFilePoint(com.starbase.starteam.File f) {
 		this(f.getFullName(),f.getRevisionNumber());
-
-		//    setRevisionNumber(f.getRevisionNumber());
-		//    setMsg(f.getComment());
-		//    setDate(f.getModifiedTime().createDate());
-		//    setFileName(f.getName());
-		//    setUsername(f.getServer().getUser(f.getModifiedBy()).getName());
 	}
 
-	//  public StarTeamFilePoint(String fullfilepath, revisionNumber) {
-	//  	    super(f.getName(),f.getRevisionNumber(),f.getModifiedTime().createDate(),f.getServer().getUser(f.getModifiedBy()).getName(),f.getComment());
-	//	    this.fullfilepath = fullfilepath;
-	//  }
-
 	public StarTeamFilePoint(String fullFilePath, int revisionNumber) {
-		//    super(name,revisionNumber,createDate,userName,comment);
 		this.fullfilepath = fullFilePath;
 		this.revisionnumber = revisionNumber;
 	}
@@ -44,10 +32,6 @@ public class StarTeamFilePoint implements Serializable, Comparable {
 	public String getFullfilepath() {
 		return fullfilepath;
 	}
-
-	//  public void setFullfilepath(String fullfilepath) {
-	//    this.fullfilepath = fullfilepath;
-	//  }
 
 	public File getFile() {
 		return new File(getFullfilepath());

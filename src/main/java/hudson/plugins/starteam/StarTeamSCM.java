@@ -226,7 +226,7 @@ public class StarTeamSCM extends SCM {
 				scm = req.bindParameters(StarTeamSCM.class, "starteam.");
 				scms.add(scm);
 			} catch (RuntimeException e) {
-				// TODO Auto-generated catch block
+				// TODO print exception trace in a better place then System.out
 				e.printStackTrace();
 			}
 			// We don't have working repo browsers yet...

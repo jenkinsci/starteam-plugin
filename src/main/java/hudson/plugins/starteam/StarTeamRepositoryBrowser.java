@@ -23,7 +23,6 @@ public abstract class StarTeamRepositoryBrowser extends RepositoryBrowser {
 	 */
 	@Override
 	public URL getChangeSetLink(Entry changeSet) throws IOException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -33,7 +32,6 @@ public abstract class StarTeamRepositoryBrowser extends RepositoryBrowser {
 	 * @see hudson.model.Describable#getDescriptor()
 	 */
 	public Descriptor getDescriptor() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
