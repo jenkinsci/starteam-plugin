@@ -101,6 +101,7 @@ public static Collection<java.io.File> convertToFileCollection(final Collection<
 
   // storage
 
+  @SuppressWarnings("unchecked")
   public static Collection<StarTeamFilePoint> loadCollection(final java.io.File file) throws IOException {
     Collection<String> stringCollection = FileUtils.readLines(file,"ISO-8859-1");
     Collection<StarTeamFilePoint> result = new ArrayList<StarTeamFilePoint>();

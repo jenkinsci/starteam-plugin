@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 
 import net.sf.json.JSONObject;
 
@@ -116,12 +115,6 @@ public class StarTeamSCM extends SCM {
 			FilePath workspace, BuildListener listener, File changelogFile)
 			throws IOException, InterruptedException {
 		boolean status = false;
-
-		Date previousBuildDate = null;
-		if ( build.getPreviousBuild() != null)	{
-		    previousBuildDate = build.getPreviousBuild().getTimestamp().getTime();
-		}
-		Date currentBuildDate = build.getTimestamp().getTime();
 		
 		//create a FilePath to be able to create changelog file on a remote computer.
 		FilePath changeLogFilePath = new FilePath( changelogFile ) ;
