@@ -9,10 +9,7 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.GregorianCalendar;
-
-import com.starbase.starteam.File;
 
 /**
  * Builds <tt>changelog.xml</tt> for {@link StarTeamSCM}.
@@ -51,53 +48,6 @@ public final class StarTeamChangeLogBuilder {
 	 * @throws IOException
 	 * 
 	 */
-	public static boolean writeChangeLog(OutputStream aOutputStream,
-			Collection<File> aChanges)
-			throws IOException {
-
-		GregorianCalendar cal = (GregorianCalendar) Calendar.getInstance();
-		
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
-	    dateFormat.setCalendar(cal);
-	    dateFormat.setLenient(false);
-		
-		OutputStreamWriter writer = new OutputStreamWriter(aOutputStream,
-				Charset.forName("UTF-8"));
-		
-		PrintWriter printwriter = new PrintWriter( writer ) ;
-
-		printwriter.println("<?xml version='1.0' encoding='UTF-8'?>");
-		printwriter.println("<changelog>");
-		for (File change : aChanges) {
-			writeEntry(dateFormat, printwriter, change);
-		}
-		printwriter.println("</changelog>");
-		printwriter.close();
-		return true;
-	}
-
-	/**
-	 * @param dateFormat
-	 * @param printwriter
-	 * @param change
-	 */
-	private static void writeEntry(SimpleDateFormat dateFormat,
-			PrintWriter printwriter, File change) {
-		printwriter.println("\t<entry>");
-		printwriter.println("\t\t<fileName>" + change.getName() + "</fileName>");
-		printwriter.println("\t\t<revisionNumber>" + change.getContentVersion()
-				+ "</revisionNumber>");
-		java.util.Date aDate = change.getModifiedTime().createDate();
-		printwriter.println("\t\t<date>"
-				+ Util.xmlEscape(dateFormat.format(aDate)) + "</date>");
-		printwriter.println("\t\t<message>"
-				+ Util.xmlEscape(change.getComment()) + "</message>");
-		printwriter.println("\t\t<user>"
-				+ change.getModifiedBy()
-				+ "</user>");
-		printwriter.println("\t</entry>");
-	}
-
 	public static boolean writeChangeLog(OutputStream outputStream,
 			StarTeamChangeSet changeSet)
 			throws IOException {
@@ -142,6 +92,9 @@ public final class StarTeamChangeLogBuilder {
 		printwriter.println("\t\t<user>"
 				+ change.getUsername()
 				+ "</user>");
+		printwriter.println("\t\t<changeType>"
+				+ change.getChangeType()
+				+ "</changeType>");
 		printwriter.println("\t</entry>");
 	}
 

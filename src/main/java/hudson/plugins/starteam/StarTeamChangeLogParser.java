@@ -94,6 +94,11 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
 				if (node.selectSingleNode("user") != null)
 					change.setUsername(node.selectSingleNode("user")
 							.getStringValue());
+
+				if (node.selectSingleNode("changeType") != null)
+					change.setChangeType(node.selectSingleNode("changeType")
+							.getStringValue());
+
 				changeLogEntries.add(change);
 			}
 		} catch (Exception e) {

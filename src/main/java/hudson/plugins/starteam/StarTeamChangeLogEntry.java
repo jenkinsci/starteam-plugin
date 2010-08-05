@@ -21,17 +21,17 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 	private String msg;
 	private Date date;
 	private String fileName;
-	private String change;
+	private String changeType;
 	
 	public StarTeamChangeLogEntry(String fileName, int revisionNumber,
-			Date date, String username, String msg, String change) {
+			Date date, String username, String msg, String changeType) {
 		super();
 		this.revisionNumber = revisionNumber;
 		this.username = username;
 		this.msg = msg;
 		this.date = date;
 		this.fileName = fileName;
-		this.change = change;
+		this.changeType = changeType;
 	}
 
 	public StarTeamChangeLogEntry() {
@@ -99,8 +99,24 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 		this.fileName = aFileName;
 	}
 
-	public String getChange() {
-		return change;
+	public String getChangeType() {
+		return changeType;
 	}
 
+	public void setChangeType(String aChange) {
+		this.changeType = aChange;
+	}
+
+	@Override
+	public String toString() {
+	    final StringBuffer buffer = new StringBuffer();
+	    buffer.append( "file: " ).append( fileName );
+	    buffer.append( " revision: " ).append( revisionNumber );
+	    buffer.append( " date: " ).append( date );
+	    buffer.append( " changeType: " ).append( changeType );
+	    buffer.append( " user: " ).append( username );
+	    buffer.append( " mgs: " ).append( msg );
+	    return buffer.toString();
+	}
+	
 }
