@@ -206,18 +206,18 @@ public class StarTeamConnection implements Serializable {
 		for (File f : changeSet.getFilesToCheckout()) {
 			boolean dirty = true;
 			switch (f.getStatus()) {
+				case Status.UNKNOWN:
+					dirty = false;
+				case Status.NEW:
 				case Status.MERGE:
 				case Status.MODIFIED:
-				case Status.UNKNOWN:
-				case Status.NEW:
-					dirty = false;
 					// clobber these
 					new java.io.File(f.getFullName()).delete();
 				    if (!quietCheckout) logger.println("[co] Deleted File: " + f.getFullName());
 					break;
 				case Status.MISSING:
-					dirty = false;
 				case Status.OUTOFDATE:
+					dirty = false;
 					// just go on and check out
 					break;
 				default:
@@ -247,7 +247,7 @@ public class StarTeamConnection implements Serializable {
 				throw e;
 			}
 			if (dirty) {
-				changeSet.getChanges().add(FileToStarTeamChangeLogEntry(f));
+				changeSet.getChanges().add(FileToStarTeamChangeLogEntry(f,"dirty"));
 			}
 			f.discard();
 			if (!quietCheckout) logger.println("[co] " + f.getFullName() + "... ok");
