@@ -110,7 +110,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 
 		// Get a list of files that require updating
 		Collection<StarTeamFilePoint> historicFilePoints = null;
-		Run lastBuild = build.getPreviousBuild();
+		Run lastBuild = (build == null) ? null : build.getPreviousBuild();
 		if (lastBuild != null){
 			File filePointFile = new File(lastBuild.getRootDir(),StarTeamConnection.FILE_POINT_FILENAME);
 			if(filePointFile.exists() ) {
