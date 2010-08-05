@@ -41,9 +41,9 @@ public final class StarTeamChangeLogBuilder {
 	 * 
 	 * </p>
 	 * 
-	 * @param aOutputStream
+	 * @param outputStream
 	 *            the stream to write to
-	 * @param aChanges
+	 * @param changeSet
 	 *            the history objects to store
 	 * @throws IOException
 	 * 
@@ -90,10 +90,10 @@ public final class StarTeamChangeLogBuilder {
 		printwriter.println("\t\t<message>"
 				+ Util.xmlEscape(change.getMsg()) + "</message>");
 		printwriter.println("\t\t<user>"
-				+ change.getUsername()
+				+ Util.xmlEscape(change.getUsername())
 				+ "</user>");
 		printwriter.println("\t\t<changeType>"
-				+ change.getChangeType()
+				+ Util.xmlEscape(change.getChangeType())
 				+ "</changeType>");
 		printwriter.println("\t</entry>");
 	}
