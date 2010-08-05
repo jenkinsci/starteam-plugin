@@ -62,4 +62,12 @@ public class StarTeamFilePoint implements Serializable, Comparable {
 		return revisionnumber;
 	}
 
+	@Override
+	public String toString() {
+	    final StringBuffer buffer = new StringBuffer();
+	    buffer.append( "file: " ).append( fullfilepath );
+	    buffer.append( " revision: " ).append( revisionnumber );
+	    return buffer.toString();
+	}
+
 }
