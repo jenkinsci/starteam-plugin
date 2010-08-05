@@ -8,7 +8,9 @@ import hudson.model.StreamBuildListener;
 import hudson.model.TaskListener;
 import hudson.model.User;
 import hudson.scm.ChangeLogParser;
+import hudson.scm.ChangeLogSet;
 import hudson.scm.SCMDescriptor;
+import hudson.scm.ChangeLogSet.Entry;
 
 import java.nio.charset.Charset;
 import java.util.Set;
@@ -101,7 +103,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
      */
 	@Test
     public void testCheckout() throws Exception {
-	    boolean promotionState = false;
+        // prepare with base label
+        boolean promotionState = false;
         FreeStyleProject project = createFreeStyleProject();
         StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
         project.setScm(scm);
@@ -115,7 +118,21 @@ public class StarTeamSCMTest extends HudsonTestCase {
         Set<User> commiters = lastBuild.getCulprits();
         Assert.assertNotNull(commiters);
         Assert.assertFalse(commiters.isEmpty());
+        ChangeLogSet<? extends Entry> changes = lastBuild.getChangeSet();
+        Assert.assertFalse(changes.isEmptySet());
+
+        // try build again - it should not show any changes
+        build = project.scheduleBuild2(0, new Cause.UserCause()).get();
+        System.out.println(build.getLog(LOG_LIMIT));
+        assertBuildStatus(Result.SUCCESS,build);
+        lastBuild =project.getLastBuild();
+        commiters = lastBuild.getCulprits();
+        Assert.assertNotNull(commiters);
+        Assert.assertTrue("There should be no changes", commiters.isEmpty());        
+        changes = lastBuild.getChangeSet();
+        Assert.assertTrue("There should be no changes", changes.isEmptySet());
         
+        // move to previous label
         scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"Before", promotionState) ;
         project.setScm(scm);
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));
@@ -128,6 +145,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
         Assert.assertNotNull(commiters);
         Assert.assertFalse(commiters.isEmpty());
         
+        // move to next label
         scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"After", promotionState) ;
         project.setScm(scm);
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));

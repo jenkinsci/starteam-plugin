@@ -4,6 +4,7 @@ import hudson.FilePath;
 import hudson.FilePath.FileCallable;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
+import hudson.model.Run;
 import hudson.remoting.VirtualChannel;
 
 import java.io.BufferedOutputStream;
@@ -14,7 +15,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Collection;
-//import java.util.Map;
 
 import com.starbase.starteam.Folder;
 
@@ -44,7 +44,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	private final String viewname;
 	private final String foldername;
 	private final StarTeamViewSelector config;
-	private final AbstractBuild<?,?> build;
+	private final AbstractBuild build;
 
 	/**
 	 * 
@@ -106,11 +106,21 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 			return false;
 		}
 		
+		listener.getLogger().print("Computing change set ");
+
 		// Get a list of files that require updating
 		Collection<StarTeamFilePoint> historicFilePoints = null;
-		Folder rootFolder = connection.getRootFolder();
+		Run lastBuild = build.getPreviousBuild();
+		if (lastBuild != null){
+			File filePointFile = new File(lastBuild.getRootDir(),StarTeamConnection.FILE_POINT_FILENAME);
+			if(filePointFile.exists() ) {
+				historicFilePoints = StarTeamFilePointFunctions.loadCollection(filePointFile);
+			}
+		}
+
 		StarTeamChangeSet changeSet;
 		try {
+			Folder rootFolder = connection.getRootFolder();
 			changeSet = connection.computeChangeSet(rootFolder,workspace,historicFilePoints,listener.getLogger());
 			// Check 'em out
 			listener.getLogger().println("performing checkout ...");
