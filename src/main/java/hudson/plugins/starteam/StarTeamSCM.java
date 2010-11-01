@@ -89,7 +89,7 @@ public class StarTeamSCM extends SCM {
 		this.labelname = labelname;
 		this.promotionstate = promotionstate;
 		StarTeamViewSelector result = null;
-		if (this.labelname != null && !this.labelname.isEmpty())
+		if ((this.labelname != null) && (this.labelname.length() != 0))
 		{
 			try {
 				if (this.promotionstate)
