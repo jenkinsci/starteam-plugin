@@ -59,6 +59,15 @@
 			</roles>
 			<timezone>-5</timezone>
 		</developer>
+		<developer>
+            <id>robwiss</id>
+            <name>Rob Wissmann</name>
+            <email>robwiss@gmail.com</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
 	</developers>
 	<contributors>
 		<contributor>
@@ -108,7 +117,7 @@
 			<version>1</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
+ 		<dependency>
 			<groupId>com.rsa</groupId>
 			<artifactId>jsafe</artifactId>
 			<version>3.5</version>
@@ -174,6 +183,7 @@
 						<property><name>test.starteam.foldername</name> <value>${test.starteam.foldername}</value></property>
 						<property><name>test.starteam.username</name>   <value>${test.starteam.username}</value></property>
 						<property><name>test.starteam.password</name>   <value>${test.starteam.password}</value></property>
+						<property><name>test.starteam.changedate</name> <value>${test.starteam.changedate}</value></property>
 					</systemProperties>
 				</configuration>
 			</plugin>

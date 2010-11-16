@@ -1,5 +1,6 @@
 package hudson.plugins.starteam;
 
+import static java.util.logging.Level.SEVERE;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 import net.sf.json.JSONObject;
 
@@ -51,6 +53,8 @@ public class StarTeamSCM extends SCM {
 	private final boolean promotionstate;
 
 	private final StarTeamViewSelector config;
+	
+	private static final Logger LOGGER = Logger.getLogger(StarTeamSCM.class.getName());
 
 	/**
 	 * 
@@ -190,6 +194,7 @@ public class StarTeamSCM extends SCM {
 	public static final class StarTeamSCMDescriptorImpl extends SCMDescriptor<StarTeamSCM> {
 
 		private final Collection<StarTeamSCM> scms = new ArrayList<StarTeamSCM>();
+		private static final Logger LOGGER = Logger.getLogger(StarTeamSCMDescriptorImpl.class.getName());
 
 		public StarTeamSCMDescriptorImpl() {
 			super(StarTeamSCM.class, null);
@@ -213,8 +218,7 @@ public class StarTeamSCM extends SCM {
 				scm = req.bindParameters(StarTeamSCM.class, "starteam.");
 				scms.add(scm);
 			} catch (RuntimeException e) {
-				// TODO print exception trace in a better place then System.out
-				e.printStackTrace();
+			    LOGGER.log(SEVERE, e.getMessage(), e);
 			}
 			// We don't have working repo browsers yet...
 			// scm.repositoryBrowser = RepositoryBrowsers.createInstance(
