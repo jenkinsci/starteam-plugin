@@ -184,6 +184,7 @@
 						<property><name>test.starteam.username</name>   <value>${test.starteam.username}</value></property>
 						<property><name>test.starteam.password</name>   <value>${test.starteam.password}</value></property>
 						<property><name>test.starteam.changedate</name> <value>${test.starteam.changedate}</value></property>
+						<property><name>test.starteam.dateinpast</name> <value>${test.starteam.dateinpast}</value></property>
 					</systemProperties>
 				</configuration>
 			</plugin>

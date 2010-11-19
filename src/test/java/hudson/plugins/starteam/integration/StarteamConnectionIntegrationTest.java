@@ -10,6 +10,9 @@ import hudson.plugins.starteam.StarTeamViewSelector;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collection;
 
@@ -38,6 +41,8 @@ public class StarteamConnectionIntegrationTest {
 	 */
 	private File parentDirectory ;
 	
+	private String dateinpast;
+	
 	/**
 	 * initalise integration starteam connection
 	 * @throws StarTeamSCMException 
@@ -52,6 +57,7 @@ public class StarteamConnectionIntegrationTest {
 		String folderName = System.getProperty("test.starteam.foldername", "NGBL/source/ant");
 		String userName = System.getProperty("test.starteam.username", "");
 		String password = System.getProperty("test.starteam.password", "");
+		dateinpast = System.getProperty("test.starteam.dateinpast", "");
 
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, null ) ;
 		starTeamConnection.initialize() ;
@@ -88,13 +94,15 @@ public class StarteamConnectionIntegrationTest {
 	 * find all changed files in starteam repository.
 	 * @throws IOException 
 	 * @throws StarTeamSCMException 
+	 * @throws ParseException 
 	 */
 	@Test
-	public void testFindChangedFiles() throws StarTeamSCMException, IOException {
+	public void testFindChangedFiles() throws StarTeamSCMException, IOException, ParseException {
 
 		// get connection with view set in past
 		Calendar timeInPast = Calendar.getInstance() ;
-		timeInPast.add(Calendar.MONTH, -3);
+		final DateFormat df = new SimpleDateFormat("yyyy/M/d HH:mm:ss");
+		timeInPast.setTime(df.parse(dateinpast));
 		StarTeamViewSelector selector = new StarTeamViewSelector(timeInPast.getTime());		
 		StarTeamConnection oldStarTeamConnection = new StarTeamConnection(starTeamConnection,selector);
 		oldStarTeamConnection.initialize();
