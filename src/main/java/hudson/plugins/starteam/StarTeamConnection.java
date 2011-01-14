@@ -3,6 +3,8 @@
  */
 package hudson.plugins.starteam;
 
+import hudson.model.AbstractBuild;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -265,8 +267,16 @@ public class StarTeamConnection implements Serializable {
 				logger.println("[remove:warn] Planned to remove [" + f + "]");
 			}
 		}
-		logger.println("*** storing change set");
-		StarTeamFilePointFunctions.storeCollection(new java.io.File(buildFolder, FILE_POINT_FILENAME), changeSet.getFilePointsToRemember());
+		
+		// buildFolder is null if we're building on a remote slave
+		// Currently, the plugin checks out code on the master and on the remote slave.
+		// Consequently, we only need to store the filePointFile on the master. Slaves
+		// don't have a good place to store metadata like this, anyway.
+		if (buildFolder != null) {
+			java.io.File filePointFile = new java.io.File(buildFolder, FILE_POINT_FILENAME);
+			logger.println("*** storing change set");
+			StarTeamFilePointFunctions.storeCollection(filePointFile, changeSet.getFilePointsToRemember());
+		}
 		logger.println("***checkout done");
 	}
 

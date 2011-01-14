@@ -96,10 +96,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 		Collection<StarTeamFilePoint> historicFilePoints = null;
 		if (lastBuild != null){
-			File filePointFile = new File(lastBuild.getRootDir(),StarTeamConnection.FILE_POINT_FILENAME);
-			if(filePointFile.exists() ) {
-	          historicFilePoints = StarTeamFilePointFunctions.loadCollection(filePointFile);
-			}
+			historicFilePoints = StarTeamFilePointFunctions.loadCollection(new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME));
 	    }
 		
 		StarTeamChangeSet changeSet = null;

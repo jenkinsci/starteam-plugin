@@ -11,6 +11,7 @@ import hudson.scm.ChangeLogParser;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.SCMDescriptor;
 import hudson.scm.ChangeLogSet.Entry;
+import hudson.slaves.DumbSlave;
 
 import java.nio.charset.Charset;
 import java.util.Set;
@@ -41,6 +42,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	String labelName = System.getProperty("test.starteam.labelname", "hudsonTestLabel");
 	String promotionName = System.getProperty("test.starteam.promotionname", "hudsonPromotionState");
 	String changeDate = System.getProperty("test.starteam.changedate", "2010/7/14");
+	String testFile = System.getProperty("test.starteam.testfile", "");
 
 
 	@Before
@@ -67,7 +69,25 @@ public class StarTeamSCMTest extends HudsonTestCase {
 			assertEquals(labelName,t.getLabelname());
 			assertEquals(promotionState,t.isPromotionstate());
 	}
-    /**
+
+	   /**
+     * Makes sure that checking out on the slave will work.
+     */
+    @Bug(7967)
+    @Test
+    public void testRemoteCheckOut() throws Exception {
+        DumbSlave s = createSlave();
+        FreeStyleProject p = createFreeStyleProject();
+        p.setAssignedLabel(s.getSelfLabel());
+        boolean promotionState = false;
+        p.setScm(new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password,  labelName, promotionState));
+
+        FreeStyleBuild b = assertBuildStatusSuccess(p.scheduleBuild2(0, new Cause.UserCause()).get());
+        assertTrue(b.getWorkspace().child(testFile).exists());  // use a file that is in the root directory of your project
+        b = assertBuildStatusSuccess(p.scheduleBuild2(0).get());
+    }
+    
+	/**
      * Makes sure that the configuration survives the round-trip.
      */
 	@Bug(6881)

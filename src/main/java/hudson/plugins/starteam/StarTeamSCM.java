@@ -55,7 +55,7 @@ public class StarTeamSCM extends SCM {
 	private final StarTeamViewSelector config;
 	
 	private static final Logger LOGGER = Logger.getLogger(StarTeamSCM.class.getName());
-
+	
 	/**
 	 * 
 	 * default stapler constructor.
@@ -116,25 +116,26 @@ public class StarTeamSCM extends SCM {
 	 */
 	@Override
 	public boolean checkout(AbstractBuild build, Launcher launcher,
-			FilePath workspace, BuildListener listener, File changelogFile)
-			throws IOException, InterruptedException {
-		boolean status = false;
-		
-		//create a FilePath to be able to create changelog file on a remote computer.
-		FilePath changeLogFilePath = new FilePath( changelogFile ) ;
-		
-		// Create an actor to do the checkout, possibly on a remote machine
-		StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-				port, user, passwd, projectname, viewname, foldername, config, changeLogFilePath, listener, build);
-		if (workspace.act(co_actor)) {
-			// change log is written during checkout (only one pass for
-			// comparison)
-			status = true;
-		} else {
-			listener.getLogger().println("StarTeam checkout failed");
-			status = false;
-		}
-		return status;
+	        FilePath workspace, BuildListener listener, File changelogFile)
+	throws IOException, InterruptedException {
+	    boolean status = false;
+
+	    //create a FilePath to be able to create changelog file on a remote computer.
+	    FilePath changeLogFilePath = new FilePath( changelogFile ) ;
+
+	    // Create an actor to do the checkout, possibly on a remote machine
+	    StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
+	            port, user, passwd, projectname, viewname, foldername, config,
+	            changeLogFilePath, listener, build, workspace.isRemote());
+	    if (workspace.act(co_actor)) {
+	        // change log is written during checkout (only one pass for
+	        // comparison)
+	        status = true;
+	    } else {
+	        listener.getLogger().println("StarTeam checkout failed");
+	        status = false;
+	    }
+	    return status;
 	}
 
 	/*

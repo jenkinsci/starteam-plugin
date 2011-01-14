@@ -1,10 +1,12 @@
 package hudson.plugins.starteam;
 
+import static java.util.logging.Level.INFO;
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Run;
+import hudson.plugins.starteam.StarTeamSCM.StarTeamSCMDescriptorImpl;
 import hudson.remoting.VirtualChannel;
 
 import java.io.BufferedOutputStream;
@@ -13,8 +15,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 import com.starbase.starteam.Folder;
 
@@ -27,7 +31,7 @@ import com.starbase.starteam.Folder;
  * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
  * @author Steve Favez <sfavez@verisign.com>
  */
-class StarTeamCheckoutActor implements FileCallable<Boolean> {
+class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 
 	/**
 	 * serial version id.
@@ -44,7 +48,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	private final String viewname;
 	private final String foldername;
 	private final StarTeamViewSelector config;
-	private final AbstractBuild build;
+	private final Collection<StarTeamFilePoint> historicFilePoints;
+	private final File buildDir;
 
 	/**
 	 * 
@@ -74,7 +79,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
 			String foldername, StarTeamViewSelector config, FilePath changelogFile, BuildListener listener,
-			AbstractBuild build ) {
+			AbstractBuild<?, ?> build, boolean isRemote ) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -85,7 +90,29 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		this.changelog = changelogFile;
 		this.listener = listener;
 		this.config = config;
-		this.build = build;
+		
+		// Previous versions stored the build object as a member of StarTeamCheckoutActor. AbstractBuild
+		// objects are not serializable, therefore the starteam plugin would break when remoting to
+		// another machine. Instead of storing the build object the information from the build object
+		// that is needed (historicFilePoints and buildDir) is stored.
+		
+		// Get a list of files that require updating
+		Collection<StarTeamFilePoint> historicFilePoints = null;
+		AbstractBuild<?, ?> lastBuild = (build == null) ? null : build.getPreviousBuild();
+		if (lastBuild != null){
+			try {
+				File filePointFile = new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME);
+				if (filePointFile.exists()) {
+					historicFilePoints = StarTeamFilePointFunctions.loadCollection(filePointFile);
+				}
+			} catch (IOException e) {
+				e.printStackTrace(listener.getLogger());
+			}
+		}
+		this.historicFilePoints = historicFilePoints;
+		
+		File buildDir = ( build != null )?  build.getRootDir() : null;
+		this.buildDir = (isRemote == false) ? buildDir : null;
 	}
 
 	/*
@@ -108,23 +135,13 @@ class StarTeamCheckoutActor implements FileCallable<Boolean> {
 		
 		listener.getLogger().print("Computing change set ");
 
-		// Get a list of files that require updating
-		Collection<StarTeamFilePoint> historicFilePoints = null;
-		Run lastBuild = (build == null) ? null : build.getPreviousBuild();
-		if (lastBuild != null){
-			File filePointFile = new File(lastBuild.getRootDir(),StarTeamConnection.FILE_POINT_FILENAME);
-			if(filePointFile.exists() ) {
-				historicFilePoints = StarTeamFilePointFunctions.loadCollection(filePointFile);
-			}
-		}
-
 		StarTeamChangeSet changeSet;
 		try {
 			Folder rootFolder = connection.getRootFolder();
 			changeSet = connection.computeChangeSet(rootFolder,workspace,historicFilePoints,listener.getLogger());
 			// Check 'em out
 			listener.getLogger().println("performing checkout ...");
-			File buildDir = ( build != null )?  build.getRootDir() : workspace; 
+			File buildDir = this.buildDir; 
 
 			connection.checkOut(changeSet, listener.getLogger(), buildDir);
 
