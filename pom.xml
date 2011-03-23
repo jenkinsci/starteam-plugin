@@ -16,6 +16,23 @@
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
 	<inceptionYear>2007</inceptionYear>
+  <scm>
+    <connection>scm:git:ssh://github.com/jenkinsci/starteam-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/starteam-plugin.git</developerConnection>
+    <url>https://github.com/jenkinsci/starteam-plugin</url>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>maven.jenkins-ci.org</id>
+      <url>http://maven.jenkins-ci.org:8081/content/repositories/releases/</url>
+    </repository>
+<snapshotRepository>
+<!-- prevent accidental deployment of SNAPSHOTS to repository -->
+<id>bogus</id>
+<url>file:.</url>
+</snapshotRepository>
+  </distributionManagement>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -155,6 +172,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
