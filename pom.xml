@@ -17,7 +17,7 @@
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
 	<inceptionYear>2007</inceptionYear>
   <scm>
-    <connection>scm:git:ssh://github.com/jenkinsci/starteam-plugin.git</connection>
+    <connection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/starteam-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/starteam-plugin</url>
   </scm>
@@ -169,6 +169,12 @@
 	<build>
 		<finalName>starteam</finalName>
 		<plugins>
+      <plugin>
+        <artifactId>maven-release-plugin</artifactId>
+        <configuration>
+          <goals>deploy</goals>
+        </configuration>
+      </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
