@@ -1,6 +1,7 @@
 package hudson.plugins.starteam;
 
 import hudson.model.User;
+import hudson.scm.ChangeLogSet;
 
 import java.util.Collection;
 import java.util.Date;
@@ -16,107 +17,119 @@ import java.util.LinkedList;
  */
 public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 
-	private int revisionNumber;
-	private String username;
-	private String msg;
-	private Date date;
-	private String fileName;
-	private String changeType;
-	
-	public StarTeamChangeLogEntry(String fileName, int revisionNumber,
-			Date date, String username, String msg, String changeType) {
-		super();
-		this.revisionNumber = revisionNumber;
-		this.username = username;
-		this.msg = msg;
-		this.date = date;
-		this.fileName = fileName;
-		this.changeType = changeType;
-	}
+  private int revisionNumber;
 
-	public StarTeamChangeLogEntry() {
-		super();
-	}
+  private String username;
 
-	@Override
-	public Collection<String> getAffectedPaths() {
-		Collection<String> list = new LinkedList<String>();
-		list.add(fileName);
-		return list;
-	}
+  private String msg;
 
-	/**
-	 * Gets the Hudson user based upon the StarTeam {@link #username}.
-	 * 
-	 * @see hudson.scm.ChangeLogSet.Entry#getAuthor()
-	 */
-	@Override
-	public User getAuthor() {
-		return User.get(username);
-	}
-	public String getUsername() {
-		return username;
-	}
+  private Date date;
 
-	public void setUsername(String aUsername) {
-		this.username = aUsername;
-	}
+  private String fileName;
 
-	@Override
-	public String getMsg() {
-		if (msg == null)
-		{
-			return "";
-		}
-		return msg;
-	}
+  private String changeType;
 
-	public void setMsg(String aMsg) {
-		this.msg = aMsg;
-	}
+  public StarTeamChangeLogEntry(String fileName, int revisionNumber, Date date,
+      String username, String msg, String changeType) {
+    super();
+    this.revisionNumber = revisionNumber;
+    this.username = username;
+    this.msg = msg;
+    this.date = date;
+    this.fileName = fileName;
+    this.changeType = changeType;
+  }
 
-	public int getRevisionNumber() {
-		return revisionNumber;
-	}
+  public StarTeamChangeLogEntry() {
+    super();
+  }
 
-	public void setRevisionNumber(int aRevisionNumber) {
-		this.revisionNumber = aRevisionNumber;
-	}
+  @Override
+  public Collection<String> getAffectedPaths() {
+    Collection<String> list = new LinkedList<String>();
+    list.add(fileName);
+    return list;
+  }
 
-	public Date getDate() {
-		return date;
-	}
+  /**
+   * Gets the Hudson user based upon the StarTeam {@link #username}.
+   * 
+   * @see hudson.scm.ChangeLogSet.Entry#getAuthor()
+   */
+  @Override
+  public User getAuthor() {
+    return User.get(username);
+  }
 
-	public void setDate(Date aDate) {
-		this.date = aDate;
-	}
+  public String getUsername() {
+    return username;
+  }
 
-	public String getFileName() {
-		return fileName;
-	}
+  public void setUsername(String aUsername) {
+    this.username = aUsername;
+  }
 
-	public void setFileName(String aFileName) {
-		this.fileName = aFileName;
-	}
+  @Override
+  public String getMsg() {
+    if (msg == null) {
+      return "";
+    }
+    return msg;
+  }
 
-	public String getChangeType() {
-		return changeType;
-	}
+  public void setMsg(String aMsg) {
+    this.msg = aMsg;
+  }
 
-	public void setChangeType(String aChange) {
-		this.changeType = aChange;
-	}
+  public int getRevisionNumber() {
+    return revisionNumber;
+  }
 
-	@Override
-	public String toString() {
-	    final StringBuffer buffer = new StringBuffer();
-	    buffer.append( "file: " ).append( fileName );
-	    buffer.append( " revision: " ).append( revisionNumber );
-	    buffer.append( " date: " ).append( date );
-	    buffer.append( " changeType: " ).append( changeType );
-	    buffer.append( " user: " ).append( username );
-	    buffer.append( " mgs: " ).append( msg );
-	    return buffer.toString();
-	}
-	
+  public void setRevisionNumber(int aRevisionNumber) {
+    this.revisionNumber = aRevisionNumber;
+  }
+
+  public Date getDate() {
+    return date;
+  }
+
+  public void setDate(Date aDate) {
+    this.date = aDate;
+  }
+
+  public String getFileName() {
+    return fileName;
+  }
+
+  public void setFileName(String aFileName) {
+    this.fileName = aFileName;
+  }
+
+  public String getChangeType() {
+    return changeType;
+  }
+
+  public void setChangeType(String aChange) {
+    this.changeType = aChange;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuffer buffer = new StringBuffer();
+    buffer.append("file: ").append(fileName);
+    buffer.append(" revision: ").append(revisionNumber);
+    buffer.append(" date: ").append(date);
+    buffer.append(" changeType: ").append(changeType);
+    buffer.append(" user: ").append(username);
+    buffer.append(" mgs: ").append(msg);
+    return buffer.toString();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void setParent(ChangeLogSet parent) {
+    super.setParent(parent);
+  }
 }
