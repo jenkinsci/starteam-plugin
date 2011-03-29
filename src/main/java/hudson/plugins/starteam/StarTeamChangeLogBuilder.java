@@ -81,7 +81,8 @@ public final class StarTeamChangeLogBuilder {
 	private static void writeEntry(SimpleDateFormat dateFormat,
 			PrintWriter printwriter, StarTeamChangeLogEntry change) {
 		printwriter.println("\t<entry>");
-		printwriter.println("\t\t<fileName>" + change.getFileName() + "</fileName>");
+    printwriter.println("\t\t<fileName>" + Util.xmlEscape(change.getFileName())
+        + "</fileName>");
 		printwriter.println("\t\t<revisionNumber>" + change.getRevisionNumber()
 				+ "</revisionNumber>");
 		java.util.Date aDate = change.getDate();
