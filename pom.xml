@@ -77,14 +77,23 @@
 			<timezone>-5</timezone>
 		</developer>
 		<developer>
-            <id>robwiss</id>
-            <name>Rob Wissmann</name>
-            <email>robwiss@gmail.com</email>
-            <roles>
-                <role>Developer</role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
+			<id>robwiss</id>
+			<name>Rob Wissmann</name>
+			<email>robwiss@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-5</timezone>
+		</developer>
+		<developer>
+			<id>vyazelenko</id>
+			<name>Dmitry Vyazelenko</name>
+			<email>vyazelenko@yahoo.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
