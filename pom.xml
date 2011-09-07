@@ -16,6 +16,13 @@
 	<name>Hudson StarTeam plugin</name>
 	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
 	<inceptionYear>2007</inceptionYear>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <scm>
     <connection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/starteam-plugin.git</developerConnection>
