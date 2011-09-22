@@ -162,6 +162,17 @@ public class StarTeamConnection implements Serializable {
 	 * @throws StarTeamSCMException if logging on fails.
 	 */
 	public void initialize() throws StarTeamSCMException {
+		/* 
+		   Identify this as the StarTeam Hudson Plugin 
+		   so that it can support the new AppControl capability in StarTeam 2009
+		   which allows a StarTeam administrator to block or allow Unknown or specific 
+		   client/SDK applications from accessing the repository; without this, the plugin
+		   will be seen as an Unknown Client, and may be blocked by StarTeam repositories
+		   that take advantage of this feature.  This must be called before a connection
+		   to the server is established.
+		*/ 
+		ClientAppplication.setName("StarTeam Plugin for Hudson");
+		
 		server = new Server(createServerInfo());
 		server.connect();
 		try {
