@@ -171,7 +171,7 @@ public class StarTeamConnection implements Serializable {
 		   that take advantage of this feature.  This must be called before a connection
 		   to the server is established.
 		*/ 
-		ClientAppplication.setName("StarTeam Plugin for Hudson");
+		ClientApplication.setName("StarTeam Plugin for Jenkins");
 		
 		server = new Server(createServerInfo());
 		server.connect();
