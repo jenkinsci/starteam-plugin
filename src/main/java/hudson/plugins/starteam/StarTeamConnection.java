@@ -27,6 +27,7 @@ import com.starbase.starteam.PropertyNames;
 import com.starbase.starteam.Server;
 import com.starbase.starteam.ServerConfiguration;
 import com.starbase.starteam.ServerAdministration;
+import com.starbase.starteam.ClientApplication;
 import com.starbase.starteam.ServerInfo;
 import com.starbase.starteam.Status;
 import com.starbase.starteam.User;
