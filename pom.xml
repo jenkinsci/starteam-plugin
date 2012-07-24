@@ -13,8 +13,8 @@
 	<artifactId>starteam</artifactId>
 	<packaging>hpi</packaging>
 	<version>0.6.9-SNAPSHOT</version>
-	<name>Hudson StarTeam plugin</name>
-	<url>http://wiki.hudson-ci.org/display/HUDSON/StarTeam</url>
+	<name>Jenkins StarTeam plugin</name>
+	<url>http://wiki.jenkins-ci.org/display/JENKINS/StarTeam</url>
 	<inceptionYear>2007</inceptionYear>
   <licenses>
     <license>
