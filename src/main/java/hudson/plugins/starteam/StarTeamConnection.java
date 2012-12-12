@@ -316,9 +316,9 @@ public class StarTeamConnection implements Serializable {
 		try {
 			userAccts = srvAdmin.getUserAccounts();
 		} catch (Exception e) {
-			System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
-			System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
-			System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
+			// System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
+			// System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
+			// System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
 			canReadUserAccts = false;
 		}
 		if (canReadUserAccts) {
