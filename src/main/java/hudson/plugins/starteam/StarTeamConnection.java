@@ -243,7 +243,7 @@ public class StarTeamConnection implements Serializable {
 			if (!quietCheckout)
 				logger.println("[co] " + f.getFullName() + "... attempt");
 			try {
-				f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
+				f.checkout(Item.LockType.UNCHANGED, // leave the lock as is, changing lock for item in the past is impossible
 						true, // use timestamp from local time
 						true, // convert EOL to native format
 						true); // update status
