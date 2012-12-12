@@ -3,9 +3,11 @@
  */
 package hudson.plugins.starteam;
 
-import hudson.model.AbstractBuild;
+import hudson.FilePath;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.text.ParseException;
@@ -18,6 +20,7 @@ import java.util.TreeSet;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 
+import com.starbase.starteam.ClientApplication;
 import com.starbase.starteam.File;
 import com.starbase.starteam.Folder;
 import com.starbase.starteam.Item;
@@ -25,9 +28,8 @@ import com.starbase.starteam.LogonException;
 import com.starbase.starteam.Project;
 import com.starbase.starteam.PropertyNames;
 import com.starbase.starteam.Server;
-import com.starbase.starteam.ServerConfiguration;
 import com.starbase.starteam.ServerAdministration;
-import com.starbase.starteam.ClientApplication;
+import com.starbase.starteam.ServerConfiguration;
 import com.starbase.starteam.ServerInfo;
 import com.starbase.starteam.Status;
 import com.starbase.starteam.User;
@@ -208,10 +210,10 @@ public class StarTeamConnection implements Serializable {
 	 * checkout the files from starteam
 	 *
 	 * @param changeSet a description of changes  
-	 * @param buildFolder A root folder for given build. it is used for storing information.
+	 * @param filePointFilePath A FilePath reprensenting the file points file where to store the change set
 	 * @throws IOException if checkout fails.
 	 */
-	public void checkOut(StarTeamChangeSet changeSet, PrintStream logger, java.io.File buildFolder) throws IOException {
+	public void checkOut(StarTeamChangeSet changeSet, PrintStream logger, FilePath filePointFilePath) throws IOException {
 	    logger.println("*** Performing checkout on [" + changeSet.getFilesToCheckout().size() + "] files");
 	    boolean quietCheckout = changeSet.getFilesToCheckout().size() >= 2000;
 	    if (quietCheckout) {
@@ -241,7 +243,7 @@ public class StarTeamConnection implements Serializable {
 			if (!quietCheckout)
 				logger.println("[co] " + f.getFullName() + "... attempt");
 			try {
-				f.checkout(Item.LockType.UNLOCKED, // check out as unlocked
+				f.checkout(Item.LockType.UNCHANGED, // leave the lock as is, changing lock for item in the past is impossible
 						true, // use timestamp from local time
 						true, // convert EOL to native format
 						true); // update status
@@ -279,15 +281,17 @@ public class StarTeamConnection implements Serializable {
 				logger.println("[remove:warn] Planned to remove [" + f + "]");
 			}
 		}
-		
-		// buildFolder is null if we're building on a remote slave
-		// Currently, the plugin checks out code on the master and on the remote slave.
-		// Consequently, we only need to store the filePointFile on the master. Slaves
-		// don't have a good place to store metadata like this, anyway.
-		if (buildFolder != null) {
-			java.io.File filePointFile = new java.io.File(buildFolder, FILE_POINT_FILENAME);
-			logger.println("*** storing change set");
-			StarTeamFilePointFunctions.storeCollection(filePointFile, changeSet.getFilePointsToRemember());
+		logger.println("*** storing change set");
+		OutputStream os = null;
+		try {
+			os = new BufferedOutputStream(filePointFilePath.write());
+			StarTeamFilePointFunctions.storeCollection(os, changeSet.getFilePointsToRemember());
+		} catch (InterruptedException e) {
+			logger.println( "unable to store change set " +  e.getMessage()) ;
+		}finally{
+			if(os !=null){
+				os.close();
+			}
 		}
 		logger.println("***checkout done");
 	}

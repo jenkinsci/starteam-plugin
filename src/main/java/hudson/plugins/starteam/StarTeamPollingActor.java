@@ -4,7 +4,6 @@
 package hudson.plugins.starteam;
 
 import hudson.FilePath.FileCallable;
-import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
 
@@ -45,7 +44,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 	private final StarTeamViewSelector config;
 
-	private AbstractBuild lastBuild;
+	private Collection<StarTeamFilePoint> historicFilePoints;
 
 	/**
 	 * Default constructor.
@@ -58,11 +57,11 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param foldername starteam parent folder name
 	 * @param config configuration selector
 	 * @param listener Hudson task listener.
-	 * @param lastBuild 
+	 * @param historicFilePoints  
 	 */
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, TaskListener listener, AbstractBuild lastBuild) {
+			String foldername, StarTeamViewSelector config, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -72,7 +71,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		this.foldername = foldername;
 		this.listener = listener;
 		this.config = config;
-		this.lastBuild=lastBuild;
+		this.historicFilePoints=historicFilePoints;
 	}
 
 	/*
@@ -94,11 +93,6 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 			return false;
 		}
 
-		Collection<StarTeamFilePoint> historicFilePoints = null;
-		if (lastBuild != null){
-			historicFilePoints = StarTeamFilePointFunctions.loadCollection(new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME));
-	    }
-		
 		StarTeamChangeSet changeSet = null;
 		try {
 			changeSet = connection.computeChangeSet(connection.getRootFolder(), f, historicFilePoints , listener.getLogger());

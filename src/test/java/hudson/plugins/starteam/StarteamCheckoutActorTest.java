@@ -36,6 +36,8 @@ public class StarteamCheckoutActorTest {
 	
 	File changeLogFile = null ;
 	
+	File filePointsFile = null;
+	
 	BuildListener listener = new BuildListenerImpl() ;
 	/**
 	 * initalise integration starteam connection
@@ -59,6 +61,13 @@ public class StarteamCheckoutActorTest {
 		if (! changeLogFile.createNewFile() ) {
 			Assert.fail( "unable to create changelog file" ) ;
 		}
+		filePointsFile = new File( parentDirectory,  StarTeamConnection.FILE_POINT_FILENAME) ;
+		if (filePointsFile.exists()) {
+			filePointsFile.delete() ;
+		}
+		if (! filePointsFile.createNewFile() ) {
+			Assert.fail( "unable to create file point file" ) ;
+		}
 		
 	}
 	
@@ -73,6 +82,7 @@ public class StarteamCheckoutActorTest {
 		String password = System.getProperty("test.starteam.password", "");
 		
 		FilePath changeLogFilePath = new FilePath( changeLogFile ) ;
+		FilePath filePointsFilePath = new FilePath(filePointsFile);
 		StarTeamViewSelector config = null;
 		try {
 			config = new StarTeamViewSelector("", "");
@@ -81,7 +91,7 @@ public class StarteamCheckoutActorTest {
 		}
 		
 		AbstractBuild<?,?> build = null;
-		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, changeLogFilePath, listener, build, false) ;
+		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, changeLogFilePath, listener, build, filePointsFilePath) ;
 
 		return starTeamCheckoutActor ;
 	}
@@ -92,6 +102,7 @@ public class StarteamCheckoutActorTest {
 		Boolean res = checkoutActor.invoke( parentDirectory , null) ;
 		Assert.assertTrue( res ) ;
 		Assert.assertTrue( changeLogFile.length() > 0 ) ;
+		Assert.assertTrue( filePointsFile.length() > 0 ) ;
 	}
 	
 	@Test
@@ -102,6 +113,7 @@ public class StarteamCheckoutActorTest {
 		Boolean res = checkoutActor.invoke( parentDirectory , null) ;
 		Assert.assertTrue( res ) ;
 		Assert.assertTrue( changeLogFile.length() > 0 ) ;
+		Assert.assertTrue( filePointsFile.length() > 0 ) ;
 	}
 	
 	private final static class BuildListenerImpl implements BuildListener {
