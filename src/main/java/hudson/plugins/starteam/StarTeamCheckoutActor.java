@@ -1,12 +1,9 @@
 package hudson.plugins.starteam;
 
-import static java.util.logging.Level.INFO;
 import hudson.FilePath;
 import hudson.FilePath.FileCallable;
-import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
-import hudson.model.Run;
-import hudson.plugins.starteam.StarTeamSCM.StarTeamSCMDescriptorImpl;
+import hudson.model.AbstractBuild;
 import hudson.remoting.VirtualChannel;
 
 import java.io.BufferedOutputStream;
@@ -18,7 +15,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 import com.starbase.starteam.Folder;
 
@@ -49,7 +45,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	private final String foldername;
 	private final StarTeamViewSelector config;
 	private final Collection<StarTeamFilePoint> historicFilePoints;
-	private final File buildDir;
+	private final FilePath filePointFilePath;
 
 	/**
 	 * 
@@ -79,7 +75,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
 			String foldername, StarTeamViewSelector config, FilePath changelogFile, BuildListener listener,
-			AbstractBuild<?, ?> build, boolean isRemote ) {
+			AbstractBuild<?, ?> build, FilePath filePointFilePath ) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -90,11 +86,12 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		this.changelog = changelogFile;
 		this.listener = listener;
 		this.config = config;
+		this.filePointFilePath = filePointFilePath;
 		
 		// Previous versions stored the build object as a member of StarTeamCheckoutActor. AbstractBuild
 		// objects are not serializable, therefore the starteam plugin would break when remoting to
 		// another machine. Instead of storing the build object the information from the build object
-		// that is needed (historicFilePoints and buildDir) is stored.
+		// that is needed (historicFilePoints) is stored.
 		
 		// Get a list of files that require updating
 		Collection<StarTeamFilePoint> historicFilePoints = null;
@@ -110,9 +107,6 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 			}
 		}
 		this.historicFilePoints = historicFilePoints;
-		
-		File buildDir = ( build != null )?  build.getRootDir() : null;
-		this.buildDir = (isRemote == false) ? buildDir : null;
 	}
 
 	/*
@@ -141,9 +135,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 			changeSet = connection.computeChangeSet(rootFolder,workspace,historicFilePoints,listener.getLogger());
 			// Check 'em out
 			listener.getLogger().println("performing checkout ...");
-			File buildDir = this.buildDir; 
 
-			connection.checkOut(changeSet, listener.getLogger(), buildDir);
+			connection.checkOut(changeSet, listener.getLogger(), filePointFilePath);
 
 			listener.getLogger().println("creating change log file ");
 			try {

@@ -4,13 +4,13 @@ import static java.util.logging.Level.SEVERE;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.TaskListener;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
 import hudson.scm.ChangeLogParser;
-import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import hudson.scm.SCM;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,8 +53,6 @@ public class StarTeamSCM extends SCM {
 	private final boolean promotionstate;
 
 	private final StarTeamViewSelector config;
-	
-	private static final Logger LOGGER = Logger.getLogger(StarTeamSCM.class.getName());
 	
 	/**
 	 * 
@@ -122,11 +120,14 @@ public class StarTeamSCM extends SCM {
 
 	    //create a FilePath to be able to create changelog file on a remote computer.
 	    FilePath changeLogFilePath = new FilePath( changelogFile ) ;
+	    
+	    //create a FilePath to be able to create the filePointFile
+	    FilePath filePointFilePath = new FilePath(new File(build.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME));
 
 	    // Create an actor to do the checkout, possibly on a remote machine
 	    StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
 	            port, user, passwd, projectname, viewname, foldername, config,
-	            changeLogFilePath, listener, build, workspace.isRemote());
+	            changeLogFilePath, listener, build, filePointFilePath);
 	    if (workspace.act(co_actor)) {
 	        // change log is written during checkout (only one pass for
 	        // comparison)
@@ -173,11 +174,19 @@ public class StarTeamSCM extends SCM {
 		boolean status = false;
 		AbstractBuild<?,?> lastBuild = (AbstractBuild<?, ?>) proj.getLastBuild();
 
+		Collection<StarTeamFilePoint> historicFilePoints = null;
+		if(lastBuild!=null){
+			File historicFilePointFile = new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME);
+			if(historicFilePointFile.exists()){
+				historicFilePoints = StarTeamFilePointFunctions.loadCollection(historicFilePointFile);
+			}
+		}
+		
 		// Create an actor to do the polling, possibly on a remote machine
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
 				user, passwd, projectname, viewname, foldername,
 				config, listener,
-				lastBuild);
+				historicFilePoints);
 		if (workspace.act(p_actor)) {
 			status = true;
 		} else {

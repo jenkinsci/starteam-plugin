@@ -1,6 +1,10 @@
 package hudson.plugins.starteam;
 
+import hudson.FilePath;
+
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Functions operating on StarTeamFilePoint type.
@@ -121,12 +126,12 @@ public static Collection<java.io.File> convertToFileCollection(final Collection<
     return result;
   }
 
-  public static void storeCollection(final java.io.File file, final Collection<StarTeamFilePoint> collection) throws IOException {
+  public static void storeCollection(final OutputStream bos, final Collection<StarTeamFilePoint> collection) throws IOException {
     Collection<String> stringCollection = new ArrayList<String>();
-    for (StarTeamFilePoint i:collection) {
+	for (StarTeamFilePoint i:collection) {
       stringCollection.add(i.getRevisionNumber()+","+i.getFullfilepath());
-    }
-    FileUtils.writeLines(file,"ISO-8859-1",stringCollection);
+	}
+	IOUtils.writeLines(stringCollection, null, bos, "ISO-8859-1");
   }
 
 }
