@@ -101,6 +101,15 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
+		<developer>
+			<id>hugares</id>
+			<name>Hugo Ares</name>
+			<email>hugares@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-5</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
