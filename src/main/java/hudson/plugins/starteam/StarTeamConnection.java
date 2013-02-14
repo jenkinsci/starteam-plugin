@@ -333,13 +333,8 @@ public class StarTeamConnection implements Serializable {
 			}
 		} else {
 			// Since the user account running the build does not have user admin perms
-			// Build the base email name from the User Full Name
-			String shortname = server.getUser(userId).getName();
-			if (shortname.indexOf(",")>0) {
-				// check for a space and assume "lastname, firstname"
-				shortname = shortname.charAt((shortname.indexOf(" ")+1))+ shortname.substring(0, shortname.indexOf(","));
-			} 
-			return shortname;
+			// use the User Full Name
+			return server.getUser(userId).getName();
 		}
 		return "unknown";
 	}
