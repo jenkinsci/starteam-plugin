@@ -338,13 +338,7 @@ public class StarTeamConnection implements Serializable {
 			if (shortname.indexOf(",")>0) {
 				// check for a space and assume "lastname, firstname"
 				shortname = shortname.charAt((shortname.indexOf(" ")+1))+ shortname.substring(0, shortname.indexOf(","));
-			} else {
-				// check for a space and assume "firstname lastname"
-				if (shortname.indexOf(" ")>0) {
-					shortname = shortname.charAt(0) + shortname.substring((shortname.indexOf(" ")+1),shortname.length());
-
-				}  // otherwise, do nothing, just return the name we have.
-			}
+			} 
 			return shortname;
 		}
 		return "unknown";
