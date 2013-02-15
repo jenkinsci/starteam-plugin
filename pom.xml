@@ -12,7 +12,7 @@
 	<groupId>hudson.plugins</groupId>
 	<artifactId>starteam</artifactId>
 	<packaging>hpi</packaging>
-	<version>0.6.10-SNAPSHOT</version>
+	<version>0.6.10</version>
 	<name>Jenkins StarTeam plugin</name>
 	<url>http://wiki.jenkins-ci.org/display/JENKINS/StarTeam</url>
 	<inceptionYear>2007</inceptionYear>
