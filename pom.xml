@@ -24,7 +24,7 @@
     </license>
   </licenses>
   <scm>
-    <connection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</connection>
+    <connection>scm:git:http://github.com/jenkinsci/starteam-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/starteam-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/starteam-plugin</url>
   </scm>
