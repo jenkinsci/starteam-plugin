@@ -143,13 +143,13 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam104</artifactId>
+			<artifactId>starteam100</artifactId>
 			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam104-resources</artifactId>
+			<artifactId>starteam100-resources</artifactId>
 			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
@@ -157,12 +157,6 @@
 			<groupId>com.smartsockets</groupId>
 			<artifactId>ss</artifactId>
 			<version>1</version>
-			<scope>provided</scope>
-		</dependency>
- 		<dependency>
-			<groupId>com.rsa</groupId>
-			<artifactId>jsafe</artifactId>
-			<version>3.5</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
