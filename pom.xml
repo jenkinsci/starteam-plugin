@@ -23,6 +23,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  <!--test-->
   <scm>
     <connection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</connection>
     <developerConnection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</developerConnection>
