@@ -79,7 +79,7 @@ public class StarTeamViewSelector implements Serializable {
 	    }
 	}
 
-	public View configView(View baseView) throws StarTeamSCMException, ParseException{
+	public View configView(View baseView, int buildNumber) throws StarTeamSCMException, ParseException{
 		final ViewConfiguration configuration;
 
 		if (configInfo != null && !configInfo.isEmpty()) {
@@ -88,7 +88,13 @@ public class StarTeamViewSelector implements Serializable {
 				configuration = ViewConfiguration.createTip();
 				break;
 			case LABEL:
-				int labelId = findLabelInView(baseView, configInfo);
+				int labelId;
+				// check if label is a pattern
+				if (configInfo.indexOf("%") != -1) {
+					labelId = createLabelInView(baseView, configInfo, buildNumber);
+				} else {
+					labelId = findLabelInView(baseView, configInfo);
+				}
 				configuration = ViewConfiguration.createFromLabel(labelId);
 				break;
 			case PROMOTION:		          
@@ -121,6 +127,15 @@ public class StarTeamViewSelector implements Serializable {
 			}
 		}
 		throw new StarTeamSCMException("Couldn't find label [" + labelname + "] in view " + view.getName());
+	}
+
+	private static int createLabelInView(final View view, final String labelformat, final int buildNumber) throws StarTeamSCMException {
+		final String labelName = String.format(labelformat, buildNumber);
+		final String labelDesc = String.format("Jenkins build %d", buildNumber);
+		final boolean buildLabel = true;
+		final boolean frozen = true;
+		Label label = view.createViewLabel(labelName, labelDesc, new OLEDate(), buildLabel, frozen);
+		return label.getID();
 	}
 
 	private static Integer findPromotionStateInView(final View view, final String promotionState) throws StarTeamSCMException {

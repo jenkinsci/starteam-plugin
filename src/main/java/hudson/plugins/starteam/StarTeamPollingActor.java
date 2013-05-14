@@ -86,7 +86,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 				hostname, port, user, passwd,
 				projectname, viewname, foldername, config);
 		try {
-			connection.initialize();
+			connection.initialize(-1);
 		} catch (StarTeamSCMException e) {
 			listener.getLogger().println(e.getLocalizedMessage());
 			connection.close();

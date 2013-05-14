@@ -89,7 +89,7 @@ public class StarTeamViewSelectorTest {
 	public final void testConfigView() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector =new StarTeamViewSelector(null,"LABEL");
 		View baseView = null;
-		selector.configView(baseView);
+		selector.configView(baseView, -1);
 		fail("Configuring null view should blow up.");
 	}
 

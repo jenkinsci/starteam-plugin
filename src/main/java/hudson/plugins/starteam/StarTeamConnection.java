@@ -162,9 +162,10 @@ public class StarTeamConnection implements Serializable {
 	 * Initialize the connection. This means logging on to the server and
 	 * finding the project, view and folder we want.
 	 * 
+	 * @param buildNumber a job build number, or -1 if not associated with a job.
 	 * @throws StarTeamSCMException if logging on fails.
 	 */
-	public void initialize() throws StarTeamSCMException {
+	public void initialize(int buildNumber) throws StarTeamSCMException {
 		/* 
 		   Identify this as the StarTeam Hudson Plugin 
 		   so that it can support the new AppControl capability in StarTeam 2009
@@ -190,7 +191,7 @@ public class StarTeamConnection implements Serializable {
 		{
 			View configuredView = null;
 			try {
-				configuredView = configSelector.configView(view);
+				configuredView = configSelector.configView(view, buildNumber);
 			} catch (ParseException e) {
 				throw new StarTeamSCMException("Could not correctly parse configuration date: " + e.getMessage());
 			}

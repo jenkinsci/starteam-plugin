@@ -3,4 +3,13 @@
 		When provided, all files with this label will be checked out.  When a label is not provided, files
     are checked out from the view at the current point in time.
   </p>
+	<p>
+		If the label contains a '%' character, the label will be interpreted as a format string for a build
+    label which will be created on the StarTeam server and then checked out. For example, label "build.%d"
+    will become the build label "build.42" for Jenkins build #42.
+  </p>
+	<p>
+		See http://docs.oracle.com/javase/6/docs/api/java/util/Formatter.html for details on Java format
+    strings. The only argument for the format string is the Jenkins build number.
+  </p>
 </div>
