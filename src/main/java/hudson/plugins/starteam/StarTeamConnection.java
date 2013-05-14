@@ -218,9 +218,13 @@ public class StarTeamConnection implements Serializable {
 
 		// Cache some folder data
 		final PropertyNames pnames = rootFolder.getPropertyNames();
-		final String[] propsToCache = new String[] { pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP, pnames.FILE_NAME,
-				pnames.FILE_FILE_TIME_AT_CHECKIN, pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID, pnames.FILE_STATUS };
-		rootFolder.populateNow(server.getTypeNames().FILE, propsToCache, -1);
+		final String[] filePropsToCache = new String[] { pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP, pnames.FILE_NAME,
+				pnames.FILE_FILE_TIME_AT_CHECKIN, pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID, pnames.FILE_STATUS,
+				pnames.COMMENT,
+		};
+		final String[] folderPropsToCache = new String[] { pnames.FOLDER_WORKING_FOLDER };
+		rootFolder.populateNow(server.getTypeNames().FILE, filePropsToCache, -1);
+		rootFolder.populateNow(server.getTypeNames().FOLDER, folderPropsToCache, -1);
 	}
 
 	/**
@@ -282,7 +286,6 @@ public class StarTeamConnection implements Serializable {
 			if (dirty) {
 				changeSet.getChanges().add(FileToStarTeamChangeLogEntry(f,"dirty"));
 			}
-			f.discard();
 			if (!quietCheckout) logger.println("[co] " + f.getFullName() + "... ok");
 		}
 		logger.println("*** removing [" + changeSet.getFilesToRemove().size() + "] files");
@@ -401,6 +404,7 @@ public class StarTeamConnection implements Serializable {
 		if (server.isConnected()) {
 			if (rootFolder != null)	{
 				rootFolder.discardItems(rootFolder.getTypeNames().FILE, -1);
+				rootFolder.discardItems(rootFolder.getTypeNames().FOLDER, -1);
 			}
 			view.discard();
 			project.discard();
