@@ -35,6 +35,7 @@ import com.starbase.starteam.Status;
 import com.starbase.starteam.User;
 import com.starbase.starteam.UserAccount;
 import com.starbase.starteam.View;
+import com.starbase.starteam.vts.comm.NetMonitor;
 import com.starbase.util.OLEDate;
 
 /**
@@ -68,6 +69,21 @@ public class StarTeamConnection implements Serializable {
 	private transient Folder rootFolder;
 	private transient Project project;
 	private transient ServerAdministration srvAdmin;
+
+	static {
+		try {
+			String netmonFile = System.getProperty("st.netmon.out");
+			if (netmonFile != null) {
+				NetMonitor.onFile(new java.io.File(netmonFile));
+			}
+		} catch (Throwable t) { // catch throwable to make sure the class loads, logging isn't essential
+			try {
+				System.err.println("Can't write StarTeam network monitor logs to netmon.out: " + t);
+			} catch (Throwable ignore) {
+			}
+		}
+	}
+
 	/**
 	 * Default constructor
 	 *
