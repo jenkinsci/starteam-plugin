@@ -68,7 +68,7 @@ public class StarTeamConnection implements Serializable {
 	private transient View view;
 	private transient Folder rootFolder;
 	private transient Project project;
-	private transient ServerAdministration srvAdmin;
+	private transient boolean canReadUserAccts = true;
 
 	static {
 		try {
@@ -325,23 +325,23 @@ public class StarTeamConnection implements Serializable {
 	 * @return the name of the user as provided by the StarTeam Server
 	 */
 	public String getUsername(int userId) {
-		boolean canReadUserAccts = true;
 		User stUser = server.getUser(userId);
 		String userName =stUser.getName();
-		srvAdmin = server.getAdministration();
+		ServerAdministration srvAdmin = server.getAdministration();
 		UserAccount[] userAccts = null;
-		try {
-			userAccts = srvAdmin.getUserAccounts();
-		} catch (Exception e) {
-			// System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
-			// System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
-			// System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
-			canReadUserAccts = false;
-		}
 		if (canReadUserAccts) {
-			UserAccount ua = userAccts[0];
+			try {
+				userAccts = srvAdmin.getUserAccounts();
+			} catch (Exception e) {
+				// System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
+				// System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
+				// System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
+				canReadUserAccts = false;
+			}
+		}
+		if (userAccts != null) {
 			for (int i=0; i<userAccts.length; i++) {
-				ua = userAccts[i];
+				UserAccount ua = userAccts[i];
 				if (ua.getName().equals(userName)) {
 					System.out.println("INFO: From \'" + userName + "\' found existing user LogonName = " +
 							ua.getLogOnName() + " with ID \'" + ua.getID() + "\' and email \'" + ua.getEmailAddress() +"\'");
@@ -351,7 +351,7 @@ public class StarTeamConnection implements Serializable {
 		} else {
 			// Since the user account running the build does not have user admin perms
 			// use the User Full Name
-			return server.getUser(userId).getName();
+			return userName;
 		}
 		return "unknown";
 	}
