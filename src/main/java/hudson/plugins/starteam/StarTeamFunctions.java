@@ -126,7 +126,6 @@ public class StarTeamFunctions {
         // + e.getLocalizedMessage());
       }
     }
-    folder.discard();
   }
 
 
