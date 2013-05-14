@@ -49,17 +49,18 @@ sample settings.xml:
         <profile>
         <id>hudson</id>
             <properties>
-                <test.starteam.hostname></test.starteam.hostname>
-                <test.starteam.hostport></test.starteam.hostport>
+                <test.starteam.hostname>exampleHostname</test.starteam.hostname>
+                <test.starteam.hostport>examplePort</test.starteam.hostport>
                 <test.starteam.projectname>Hudson Plugin Test</test.starteam.projectname>
                 <test.starteam.viewname>Hudson Plugin Test</test.starteam.viewname>
                 <test.starteam.foldername>Hudson Plugin Test</test.starteam.foldername>
-                <test.starteam.username></test.starteam.username>
-                <test.starteam.password></test.starteam.password>
+                <test.starteam.username>exampleUser</test.starteam.username>
+                <test.starteam.password>examplePassword</test.starteam.password>
                 <test.starteam.labelname>hudsonTestLabel</test.starteam.labelname>
                 <test.starteam.promotionname>hudsonPromotionState</test.starteam.promotionname>
-                <test.starteam.changedate></test.starteam.changedate>
-                <test.starteam.dateinpast></test.starteam.dateinpast>
+                <test.starteam.changedate>2013/5/14 14:46:27</test.starteam.changedate>
+                <test.starteam.dateinpast>2013/5/14 14:44:03</test.starteam.dateinpast>
+                <test.starteam.testfile>Hudson Plugin Test/testfile.txt</test.starteam.testfile>
             </properties>
         </profile>
     </profiles>
@@ -73,6 +74,7 @@ sample settings.xml:
 
 Set changedate to the time of hudsonTestLabelAfter or later.
 Set dateinpast to the time of the first change to testfile.txt.
+Set real values for exampleHostname, examplePort, exampleUser, and examplePassword.
 
 ***************************************************
 **                  KNOWN ISSUES                 **
