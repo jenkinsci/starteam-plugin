@@ -144,14 +144,14 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam110</artifactId>
-			<version>11</version>
+			<artifactId>starteam100</artifactId>
+			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.borland</groupId>
-			<artifactId>starteam110-resources</artifactId>
-			<version>11</version>
+			<artifactId>starteam100-resources</artifactId>
+			<version>10</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
