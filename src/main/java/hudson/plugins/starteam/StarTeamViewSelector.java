@@ -8,6 +8,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.starbase.starteam.Label;
 import com.starbase.starteam.PromotionState;
@@ -24,6 +26,8 @@ import com.starbase.util.OLEDate;
  */
 public class StarTeamViewSelector implements Serializable {
 	private static final long serialVersionUID = 1L;
+
+	private final static Pattern labelPattern = Pattern.compile("%\\{(.*?):BuildNumber\\}");
 	
 	/**
 	 * Current: view brings the most recent or "tip" versions of items, 
@@ -90,10 +94,11 @@ public class StarTeamViewSelector implements Serializable {
 			case LABEL:
 				int labelId;
 				// check if label is a pattern
-				if (configInfo.indexOf("%") != -1) {
-					labelId = createLabelInView(baseView, configInfo, buildNumber);
+				String labelName = expandLabelPattern(configInfo, buildNumber);
+				if (!configInfo.equals(labelName)) {
+					labelId = createLabelInView(baseView, labelName, buildNumber);
 				} else {
-					labelId = findLabelInView(baseView, configInfo);
+					labelId = findLabelInView(baseView, labelName);
 				}
 				configuration = ViewConfiguration.createFromLabel(labelId);
 				break;
@@ -120,6 +125,17 @@ public class StarTeamViewSelector implements Serializable {
 		return new View(baseView, configuration);
 	}
 
+	public static String expandLabelPattern(final String labelformat, final int buildNumber) {
+		Matcher m = labelPattern.matcher(labelformat);
+		StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			String fmt = "%" + m.group(1);
+			m.appendReplacement(sb, String.format(fmt, buildNumber));
+		}
+		m.appendTail(sb);
+		return sb.toString();
+	}
+
 	private static int findLabelInView(final View view, final String labelname) throws StarTeamSCMException {
 		for (Label label : view.getLabels()) {
 			if (labelname.equals(label.getName())) {
@@ -129,8 +145,7 @@ public class StarTeamViewSelector implements Serializable {
 		throw new StarTeamSCMException("Couldn't find label [" + labelname + "] in view " + view.getName());
 	}
 
-	private static int createLabelInView(final View view, final String labelformat, final int buildNumber) throws StarTeamSCMException {
-		final String labelName = String.format(labelformat, buildNumber);
+	private static int createLabelInView(final View view, final String labelName, final int buildNumber) throws StarTeamSCMException {
 		final String labelDesc = String.format("Jenkins build %d", buildNumber);
 		final boolean buildLabel = true;
 		final boolean frozen = true;
