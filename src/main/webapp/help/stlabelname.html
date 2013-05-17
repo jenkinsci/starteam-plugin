@@ -3,4 +3,14 @@
 		When provided, all files with this label will be checked out.  When a label is not provided, files
     are checked out from the view at the current point in time.
   </p>
+	<p>
+		If the label contains %{&lt;format&gt;:BUILD_NUMBER} the label will be interpreted as a format string for a build
+    label which will be created on the StarTeam server and then checked out. For example, label "build.%{d:BUILD_NUMBER}"
+    will become the build label "build.42" for Jenkins build #42. The &lt;format&gt; is a
+    <a href="http://docs.oracle.com/javase/6/docs/api/java/util/Formatter.html">Java format string</a>. Other examples:
+    <ul>
+    <li>jenkins-%{x:BUILD_NUMBER} &rarr; jenkins-2a</li>
+    <li>jenkins-%{04d:BUILD_NUMBER} &rarr; jenkins-0042</li>
+    </ul>
+  </p>
 </div>
