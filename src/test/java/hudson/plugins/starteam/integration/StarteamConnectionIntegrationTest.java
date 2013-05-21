@@ -60,7 +60,7 @@ public class StarteamConnectionIntegrationTest {
 		dateinpast = System.getProperty("test.starteam.dateinpast", "");
 
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, null ) ;
-		starTeamConnection.initialize() ;
+		starTeamConnection.initialize(-1) ;
 	
 		//create the default folder
 		parentDirectory = new File("hudson-temp-directory") ;
@@ -105,7 +105,7 @@ public class StarteamConnectionIntegrationTest {
 		timeInPast.setTime(df.parse(dateinpast));
 		StarTeamViewSelector selector = new StarTeamViewSelector(timeInPast.getTime());		
 		StarTeamConnection oldStarTeamConnection = new StarTeamConnection(starTeamConnection,selector);
-		oldStarTeamConnection.initialize();
+		oldStarTeamConnection.initialize(-1);
 
 		// get file list from the view to identify changes since the timeInPast 
 		// there is no list of previous files 

@@ -46,6 +46,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	private final StarTeamViewSelector config;
 	private final Collection<StarTeamFilePoint> historicFilePoints;
 	private final FilePath filePointFilePath;
+	private final int buildNumber;
 
 	/**
 	 * 
@@ -87,6 +88,12 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		this.listener = listener;
 		this.config = config;
 		this.filePointFilePath = filePointFilePath;
+		// Would like to store build in its entirety, but it is not serializable.
+		if (build == null) {
+			this.buildNumber = -1;
+		} else {
+			this.buildNumber = build.getNumber();
+		}
 		
 		// Previous versions stored the build object as a member of StarTeamCheckoutActor. AbstractBuild
 		// objects are not serializable, therefore the starteam plugin would break when remoting to
@@ -121,7 +128,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 				hostname, port, user, passwd,
 				projectname, viewname, foldername, config);
 		try {
-			connection.initialize();
+			connection.initialize(buildNumber);
 		} catch (StarTeamSCMException e) {
 			listener.getLogger().println(e.getLocalizedMessage());
 			return false;

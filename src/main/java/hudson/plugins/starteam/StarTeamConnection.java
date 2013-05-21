@@ -35,6 +35,7 @@ import com.starbase.starteam.Status;
 import com.starbase.starteam.User;
 import com.starbase.starteam.UserAccount;
 import com.starbase.starteam.View;
+import com.starbase.starteam.vts.comm.NetMonitor;
 import com.starbase.util.OLEDate;
 
 /**
@@ -67,7 +68,22 @@ public class StarTeamConnection implements Serializable {
 	private transient View view;
 	private transient Folder rootFolder;
 	private transient Project project;
-	private transient ServerAdministration srvAdmin;
+	private transient boolean canReadUserAccts = true;
+
+	static {
+		try {
+			String netmonFile = System.getProperty("st.netmon.out");
+			if (netmonFile != null) {
+				NetMonitor.onFile(new java.io.File(netmonFile));
+			}
+		} catch (Throwable t) { // catch throwable to make sure the class loads, logging isn't essential
+			try {
+				System.err.println("Can't write StarTeam network monitor logs to netmon.out: " + t);
+			} catch (Throwable ignore) {
+			}
+		}
+	}
+
 	/**
 	 * Default constructor
 	 *
@@ -162,9 +178,10 @@ public class StarTeamConnection implements Serializable {
 	 * Initialize the connection. This means logging on to the server and
 	 * finding the project, view and folder we want.
 	 * 
+	 * @param buildNumber a job build number, or -1 if not associated with a job.
 	 * @throws StarTeamSCMException if logging on fails.
 	 */
-	public void initialize() throws StarTeamSCMException {
+	public void initialize(int buildNumber) throws StarTeamSCMException {
 		/* 
 		   Identify this as the StarTeam Hudson Plugin 
 		   so that it can support the new AppControl capability in StarTeam 2009
@@ -190,7 +207,7 @@ public class StarTeamConnection implements Serializable {
 		{
 			View configuredView = null;
 			try {
-				configuredView = configSelector.configView(view);
+				configuredView = configSelector.configView(view, buildNumber);
 			} catch (ParseException e) {
 				throw new StarTeamSCMException("Could not correctly parse configuration date: " + e.getMessage());
 			}
@@ -201,9 +218,13 @@ public class StarTeamConnection implements Serializable {
 
 		// Cache some folder data
 		final PropertyNames pnames = rootFolder.getPropertyNames();
-		final String[] propsToCache = new String[] { pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP, pnames.FILE_NAME,
-				pnames.FILE_FILE_TIME_AT_CHECKIN, pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID, pnames.FILE_STATUS };
-		rootFolder.populateNow(server.getTypeNames().FILE, propsToCache, -1);
+		final String[] filePropsToCache = new String[] { pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP, pnames.FILE_NAME,
+				pnames.FILE_FILE_TIME_AT_CHECKIN, pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID, pnames.FILE_STATUS,
+				pnames.COMMENT,
+		};
+		final String[] folderPropsToCache = new String[] { pnames.FOLDER_WORKING_FOLDER };
+		rootFolder.populateNow(server.getTypeNames().FILE, filePropsToCache, -1);
+		rootFolder.populateNow(server.getTypeNames().FOLDER, folderPropsToCache, -1);
 	}
 
 	/**
@@ -265,7 +286,6 @@ public class StarTeamConnection implements Serializable {
 			if (dirty) {
 				changeSet.getChanges().add(FileToStarTeamChangeLogEntry(f,"dirty"));
 			}
-			f.discard();
 			if (!quietCheckout) logger.println("[co] " + f.getFullName() + "... ok");
 		}
 		logger.println("*** removing [" + changeSet.getFilesToRemove().size() + "] files");
@@ -308,23 +328,23 @@ public class StarTeamConnection implements Serializable {
 	 * @return the name of the user as provided by the StarTeam Server
 	 */
 	public String getUsername(int userId) {
-		boolean canReadUserAccts = true;
 		User stUser = server.getUser(userId);
 		String userName =stUser.getName();
-		srvAdmin = server.getAdministration();
+		ServerAdministration srvAdmin = server.getAdministration();
 		UserAccount[] userAccts = null;
-		try {
-			userAccts = srvAdmin.getUserAccounts();
-		} catch (Exception e) {
-			// System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
-			// System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
-			// System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
-			canReadUserAccts = false;
-		}
 		if (canReadUserAccts) {
-			UserAccount ua = userAccts[0];
+			try {
+				userAccts = srvAdmin.getUserAccounts();
+			} catch (Exception e) {
+				// System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
+				// System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
+				// System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
+				canReadUserAccts = false;
+			}
+		}
+		if (userAccts != null) {
 			for (int i=0; i<userAccts.length; i++) {
-				ua = userAccts[i];
+				UserAccount ua = userAccts[i];
 				if (ua.getName().equals(userName)) {
 					System.out.println("INFO: From \'" + userName + "\' found existing user LogonName = " +
 							ua.getLogOnName() + " with ID \'" + ua.getID() + "\' and email \'" + ua.getEmailAddress() +"\'");
@@ -334,7 +354,7 @@ public class StarTeamConnection implements Serializable {
 		} else {
 			// Since the user account running the build does not have user admin perms
 			// use the User Full Name
-			return server.getUser(userId).getName();
+			return userName;
 		}
 		return "unknown";
 	}
@@ -384,6 +404,7 @@ public class StarTeamConnection implements Serializable {
 		if (server.isConnected()) {
 			if (rootFolder != null)	{
 				rootFolder.discardItems(rootFolder.getTypeNames().FILE, -1);
+				rootFolder.discardItems(rootFolder.getTypeNames().FOLDER, -1);
 			}
 			view.discard();
 			project.discard();

@@ -1,16 +1,22 @@
 package hudson.plugins.starteam;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 
 import com.starbase.starteam.View;
 
 public class StarTeamViewSelectorTest {
+
+	@Rule
+	public ErrorCollector collector = new ErrorCollector();
 
 /**
  * By default the selector should pick CURRENT
@@ -89,8 +95,31 @@ public class StarTeamViewSelectorTest {
 	public final void testConfigView() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector =new StarTeamViewSelector(null,"LABEL");
 		View baseView = null;
-		selector.configView(baseView);
+		selector.configView(baseView, -1);
 		fail("Configuring null view should blow up.");
+	}
+
+	@Test
+	public final void testExpandLabelPattern() throws ParseException {
+		String[][] tests = new String[][] {
+			{"", ""},
+			{"L1", "L1"},
+			{"L1%", "L1%"},
+			{"%{d:BUILD_NUMBER}", "123"},
+			{"%{05d:BUILD_NUMBER}", "00123"},
+			{"%{x:BUILD_NUMBER}", "7b"},
+			{"%{X:BUILD_NUMBER}", "7B"},
+			{"%{04x:BUILD_NUMBER}", "007b"},
+			{"%{#x:BUILD_NUMBER}", "0x7b"},
+			{"prefix.%{d:BUILD_NUMBER}.suffix", "prefix.123.suffix"},
+			{"%{d:BUILD_NUMBER}-%{x:BUILD_NUMBER}", "123-7b"},
+		};
+		for (int i = 0; i < tests.length; i++) {
+			String test = tests[i][0];
+			String want = tests[i][1];
+			String got = StarTeamViewSelector.expandLabelPattern(test, 123);
+			collector.checkThat("expandLabelPattern("+test+", 123)", got, equalTo(want));
+		}
 	}
 
 }
