@@ -149,7 +149,7 @@ public class StarTeamViewSelector implements Serializable {
 		final String labelDesc = String.format("Jenkins build %d", buildNumber);
 		final boolean buildLabel = true;
 		final boolean frozen = true;
-		Label label = view.createViewLabel(labelName, labelDesc, new OLEDate(), buildLabel, frozen);
+		Label label = view.createViewLabel(labelName, labelDesc, OLEDate.CURRENT_SERVER_TIME, buildLabel, frozen);
 		return label.getID();
 	}
 
