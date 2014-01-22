@@ -28,7 +28,7 @@ Repository setup:
 
    1. Create a repository
           * My repository is named "Hudson Plugin Test"
-   2. Add a file to the repository
+   2. Add a file to the root folder of the repository
           *  My test file is named "testfile.txt"
    3. Modify test file and check in the changes
    2. Label the repository with the label name "hudsonTestLabelBefore"
