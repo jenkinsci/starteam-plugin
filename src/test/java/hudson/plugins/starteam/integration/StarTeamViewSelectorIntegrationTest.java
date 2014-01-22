@@ -95,7 +95,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testMissingLabel() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector("xyzzy-You Are a Sharlatan","LABEL");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(-1) ;
+		starTeamConnection.initialize(1) ;
 		Assert.fail("Missing label should cause exeception: 'Couldn't find label [...] in view ...'");
 	}
 
