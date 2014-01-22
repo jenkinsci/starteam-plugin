@@ -92,6 +92,12 @@ public class StarTeamViewSelector implements Serializable {
 				configuration = ViewConfiguration.createTip();
 				break;
 			case LABEL:
+				// -1 is the buildNumber during a poll event. Use tip when polling.
+				if (buildNumber == -1) {
+					configuration = ViewConfiguration.createTip();
+					break;
+				}
+
 				int labelId;
 				// check if label is a pattern
 				String labelName = expandLabelPattern(configInfo, buildNumber);
