@@ -111,6 +111,15 @@
 			</roles>
 			<timezone>-5</timezone>
 		</developer>
+		<developer>
+			<id>ravaid</id>
+			<name>Patrick Higgins</name>
+			<email>patrick.allen.higgins@gmail.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-7</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
