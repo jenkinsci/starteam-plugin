@@ -124,6 +124,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	 */
 	public Boolean invoke(File workspace, VirtualChannel channel)
 			throws IOException {
+		listener.getLogger().println("Initializing Starteam connection ...");
 		StarTeamConnection connection = new StarTeamConnection(
 				hostname, port, user, passwd,
 				projectname, viewname, foldername, config);
@@ -133,6 +134,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 			listener.getLogger().println(e.getLocalizedMessage());
 			return false;
 		}
+		listener.getLogger().println("Initialized Starteam connection.");
 		
 		listener.getLogger().print("Computing change set ");
 
