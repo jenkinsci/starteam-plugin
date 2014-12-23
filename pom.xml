@@ -1,51 +1,48 @@
+<!--
+The MIT License
+
+Copyright (c) 2004-2010, Sun Microsystems, Inc., Kohsuke Kawaguchi, Daniel Dyer,
+                    Erik Ramfelt, Stephen Connolly, Tom Huybrechts, Alan Harder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-	<modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jenkins-ci.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>1.568</version>
+  </parent>
 
-	<parent>
-		<groupId>org.jvnet.hudson.plugins</groupId>
-		<artifactId>plugin</artifactId>
-		<version>1.345</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
+  <artifactId>StarTeam</artifactId>
+  <version>0.7.0-SNAPSHOT</version>
+  <packaging>hpi</packaging>
 
-	<groupId>hudson.plugins</groupId>
-	<artifactId>starteam</artifactId>
-	<packaging>hpi</packaging>
-	<version>0.6.14-SNAPSHOT</version>
-	<name>Jenkins StarTeam plugin</name>
-	<url>http://wiki.jenkins-ci.org/display/JENKINS/StarTeam</url>
-	<inceptionYear>2007</inceptionYear>
+  <name>Jenkins StarTeam Plug-in</name>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/StarTeam</url>
   <licenses>
     <license>
-      <name>MIT License</name>
-      <url>http://www.opensource.org/licenses/mit-license.php</url>
-      <distribution>repo</distribution>
+      <name>MIT license</name>
+      <comments>All source code is under the MIT license.</comments>
     </license>
   </licenses>
-  <!--test-->
-  <scm>
-    <connection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</connection>
-    <developerConnection>scm:git:https://github.com/jenkinsci/starteam-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/starteam-plugin</url>
-  </scm>
-
-  <distributionManagement>
-    <repository>
-      <id>maven.jenkins-ci.org</id>
-      <url>http://maven.jenkins-ci.org:8081/content/repositories/releases/</url>
-    </repository>
-<snapshotRepository>
-<!-- prevent accidental deployment of SNAPSHOTS to repository -->
-<id>bogus</id>
-<url>file:.</url>
-</snapshotRepository>
-  </distributionManagement>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	</properties>
 
 	<developers>
 		<developer>
@@ -143,148 +140,140 @@
 			<email>dsilk@verisign.com</email>
 		</contributor>
 	</contributors>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>snapshots.repository.codehaus.org</id>
-			<url>http://snapshots.repository.codehaus.org</url>
-		</pluginRepository>
-	</pluginRepositories>
 
-	<dependencies>
-		<dependency>
-			<groupId>com.borland</groupId>
-			<artifactId>starteam110</artifactId>
-			<version>11</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jmock</groupId>
-			<artifactId>jmock-junit4</artifactId>
-			<version>2.4.0</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>jmock</groupId>
-			<artifactId>jmock-cglib</artifactId>
-			<version>1.2.0</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.objenesis</groupId>
-			<artifactId>objenesis</artifactId>
-			<version>1.1</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+  <scm>
+    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+    <url>http://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    <tag>experimental</tag>
+  </scm>
+  <distributionManagement>
+    <repository>
+      <id>maven.jenkins-ci.org</id>
+      <url>http://maven.jenkins-ci.org/content/repositories/releases/</url>
+    </repository>
+<snapshotRepository>
+<!-- prevent accidental deployment of SNAPSHOTS to repository -->
+<id>bogus</id>
+<url>file:.</url>
+</snapshotRepository>
+  </distributionManagement>
 
-	<build>
-		<finalName>starteam</finalName>
-		<plugins>
-      <plugin>
-        <artifactId>maven-release-plugin</artifactId>
-        <configuration>
-          <goals>deploy</goals>
-        </configuration>
-      </plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.4.3</version>
-				<configuration>
-					<forkMode>always</forkMode>
-					<!--  <systemPropertyVariables>
-						<buildDirectory>${project.build.directory}</buildDirectory>
-						<test.starteam.hostname>${test.starteam.hostname}</test.starteam.hostname>
-						<test.starteam.hostport>${test.starteam.hostport}</test.starteam.hostport>
-						<test.starteam.projectname>${test.starteam.projectname}</test.starteam.projectname>
-						<test.starteam.viewname>${test.starteam.viewname}</test.starteam.viewname>
-						<test.starteam.foldername>${test.starteam.foldername}</test.starteam.foldername>
-						<test.starteam.username>${test.starteam.username}</test.starteam.username>
-						<test.starteam.password>${test.starteam.password}</test.starteam.password>
-					</systemPropertyVariables> -->
-					<systemProperties>
-						<property><name>test.starteam.hostname</name>   <value>${test.starteam.hostname}</value></property>
-						<property><name>test.starteam.hostport</name>   <value>${test.starteam.hostport}</value></property>
-						<property><name>test.starteam.projectname</name><value>${test.starteam.projectname}</value></property>
-						<property><name>test.starteam.viewname</name>   <value>${test.starteam.viewname}</value></property>
-						<property><name>test.starteam.foldername</name> <value>${test.starteam.foldername}</value></property>
-						<property><name>test.starteam.username</name>   <value>${test.starteam.username}</value></property>
-						<property><name>test.starteam.password</name>   <value>${test.starteam.password}</value></property>
-						<property><name>test.starteam.changedate</name> <value>${test.starteam.changedate}</value></property>
-						<property><name>test.starteam.dateinpast</name> <value>${test.starteam.dateinpast}</value></property>
-						<property><name>test.starteam.testfile</name>   <value>${test.starteam.testfile}</value></property>
-					</systemProperties>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>1.2</version>
-				<configuration>
-					<findbugsXmlOutput>true</findbugsXmlOutput>
-					<xmlOutput>true</xmlOutput>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-  <reporting>
+  <properties>
+    <maven-hpi-plugin.version>1.96</maven-hpi-plugin.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>repo.jenkins-ci.org</id>
+      <url>http://repo.jenkins-ci.org/public/</url>
+    </repository>
+
+    <repository>
+      <id>mavenTMateSoftReleasesRepository</id>
+      <url>http://maven.tmatesoft.com/content/repositories/releases/</url>
+    </repository>
+	
+	<!-- change this to your own repo -->
+	<repository>
+      <id>borland</id>
+      <url>http://bel-depman.microfocus.com:8081/artifactory/libs-release-local</url>
+    </repository>
+	</repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>repo.jenkins-ci.org</id>
+      <url>http://repo.jenkins-ci.org/public/</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>credentials</artifactId>
+      <version>1.10</version>
+    </dependency>
+	<dependency>
+    <groupId>com.borland</groupId>
+    <artifactId>starteam</artifactId>
+    <version>14.0.3.12</version>
+		<scope>provided</scope>
+	</dependency>
+	<dependency>
+    <groupId>com.borland</groupId>
+    <artifactId>starteam-resources</artifactId>
+    <version>14.0.3.12</version>
+	<scope>provided</scope>
+</dependency>
+	<dependency>
+    <groupId>borland</groupId>
+    <artifactId>ss</artifactId>
+    <version>14.0</version>
+	<scope>provided</scope>
+</dependency>
+ 	<dependency>
+		<groupId>com.rsa</groupId>
+		<artifactId>jsafe</artifactId>
+		<version>3.5</version>
+		<scope>provided</scope>
+	</dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.9.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>1.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito</artifactId>
+      <version>1.5</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jenkins-ci.main</groupId>
+      <artifactId>jenkins-test-harness</artifactId>
+      <version>${project.parent.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jvnet.hudson.plugins</groupId>
+          <artifactId>subversion</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <formats>
-            <format>html</format>
-            <format>xml</format>
-          </formats>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <version>2.3</version>
-        <configuration>
-          <targetJdk>1.5</targetJdk>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.2</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.7</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.5</version>
+        <groupId>org.jenkins-ci.tools</groupId>
+        <artifactId>maven-hpi-plugin</artifactId>
+        <version>${maven-hpi-plugin.version}</version>
       </plugin>
     </plugins>
-  </reporting>
+  </build>
 
-    <repositories>
-        <repository>
-            <id>repo.jenkins-ci.org</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
-        </repository>
-    </repositories>
-</project>  
-
+</project>
