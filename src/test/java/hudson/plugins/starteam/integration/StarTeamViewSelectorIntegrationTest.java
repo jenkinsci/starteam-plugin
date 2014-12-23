@@ -80,7 +80,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testCurrent() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector(null,null);
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(-1) ;
+		starTeamConnection.initialize() ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
 		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
@@ -95,7 +95,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testMissingLabel() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector("xyzzy-You Are a Sharlatan","LABEL");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(1) ;
+		starTeamConnection.initialize() ;
 		Assert.fail("Missing label should cause exeception: 'Couldn't find label [...] in view ...'");
 	}
 
@@ -106,7 +106,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testLabels() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector(labelName,"LABEL");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(-1) ;
+		starTeamConnection.initialize() ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
 		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
@@ -121,7 +121,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testTimeValue() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector(changeDate,"TIME");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(-1) ;
+		starTeamConnection.initialize() ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
 		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
@@ -133,7 +133,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testTimeBeforeTime() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector("1970/1/1 00:00:00","TIME");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(-1) ;
+		starTeamConnection.initialize() ;
 		Assert.fail("Time before folder creation should cause exeception: 'The reference view is no longer available. Its root folder has been deleted from the parent view.'");
 	}
 	
@@ -145,7 +145,7 @@ public class StarTeamViewSelectorIntegrationTest {
 	public final void testPromotionValue() throws ParseException, StarTeamSCMException {
 		StarTeamViewSelector selector = new StarTeamViewSelector(promotionName,"PROMOTION");
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
-		starTeamConnection.initialize(-1) ;
+		starTeamConnection.initialize() ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
 		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;

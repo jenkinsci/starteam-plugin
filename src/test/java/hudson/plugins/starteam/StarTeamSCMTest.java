@@ -33,12 +33,12 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	private static final int LOG_LIMIT = 1000;
 	StarTeamSCM t;
 	String hostName = System.getProperty("test.starteam.hostname", "127.0.0.1");
-	int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "1")) ; 
-	String projectName = System.getProperty("test.starteam.projectname", "");
-	String viewName = System.getProperty("test.starteam.viewname", "");
-	String folderName = System.getProperty("test.starteam.foldername", "");
-	String userName = System.getProperty("test.starteam.username", "");
-	String password = System.getProperty("test.starteam.password", "");
+	int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "49201")) ; 
+	String projectName = System.getProperty("test.starteam.projectname", "StarDraw");
+	String viewName = System.getProperty("test.starteam.viewname", "StarDraw");
+	String folderName = System.getProperty("test.starteam.foldername", "StarDraw");
+	String userName = System.getProperty("test.starteam.username", "Administrator");
+	String password = System.getProperty("test.starteam.password", "Administrator");
 	String labelName = System.getProperty("test.starteam.labelname", "hudsonTestLabel");
 	String promotionName = System.getProperty("test.starteam.promotionname", "hudsonPromotionState");
 	String changeDate = System.getProperty("test.starteam.changedate", "2010/7/14");
@@ -126,7 +126,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
         // prepare with base label
         boolean promotionState = false;
         FreeStyleProject project = createFreeStyleProject();
-        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, "", promotionState) ;
         project.setScm(scm);
         // config roundtrip
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));
