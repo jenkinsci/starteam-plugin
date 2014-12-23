@@ -1,107 +1,42 @@
 package hudson.plugins.starteam;
 
-import com.starbase.starteam.Folder;
-import com.starbase.starteam.View;
-import com.starbase.starteam.File;
-import com.starbase.starteam.Item;
-
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.TreeMap;
 
-import org.apache.commons.lang.StringUtils;
+import com.starteam.File;
+import com.starteam.Folder;
+import com.starteam.LiveObject;
+import com.starteam.PropertyCollection;
+import com.starteam.Server;
+import com.starteam.Type;
+import com.starteam.TypedResource;
+import com.starteam.View;
+import com.starteam.ViewMember;
+import com.starteam.ViewMemberCollection;
 
 public class StarTeamFunctions {
 
-	/**
-	 * Find the given folder in the given view.
-	 *
-	 * @param view
-	 *            The view to look in.
-	 * @param foldername
-	 *            The view-relative path of the folder to look for.
-	 * @return The folder or null if a folder by the given name was not found.
-	 * @throws StarTeamSCMException
-	 */
-	public static Folder findFolderInView(final View view, final String foldername)
-			throws StarTeamSCMException {
-		// Check the root folder of the view
-		if (view.getName().equalsIgnoreCase(foldername)) {
-			return view.getRootFolder();
-		}
-
-		// Create a File object with the folder name for system-
-		// independent matching
-		java.io.File thefolder = new java.io.File(foldername.toLowerCase());
-
-		// Search for the folder in subfolders
-		Folder result = findFolderInView(view.getRootFolder(), thefolder);
-		if (result == null) {
-			throw new StarTeamSCMException("Couldn't find folder " + foldername
-					+ " in view " + view.getName());
-		}
-		return result;
-	}
-
-	/**
-	 * Do a breadth-first search for a folder with the given name, starting with
-	 * children of the provided folder.
-	 *
-	 * @param folder
-	 *            the folder whose children to check
-	 * @param thefolder
-	 *            the folder to look for
-	 * @return
-	 */
-	private static Folder findFolderInView(Folder folder, java.io.File thefolder) {
-		// Check subfolders, breadth first. checkLater is a collection
-		// of folders that didn't match, therefore their children
-		// will be checked next.
-		Collection<Folder> checkLater = new ArrayList<Folder>();
-		for (Folder f : folder.getSubFolders()) {
-			// Compare pathnames. The getFolderHierarchy call returns
-			// the full folder name (including root folder name which
-			// is the same as the view name) terminated by the
-			// platform-specific separator.
-			if (f.getFolderHierarchy().equalsIgnoreCase(
-					thefolder.getPath() + java.io.File.separator)) {
-				return f;
-			} else {
-				// add to list of folders whose children will be checked
-				checkLater.add(f);
-			}
-		}
-		// recurse unto children
-		for (Folder f : checkLater) {
-			Folder result = findFolderInView(f, thefolder);
-			if (result != null) {
-				return result;
-			}
-		}
-		return null;
-	}
-
-  public static Collection<File> listAllFiles(Map<String,Folder> rootFolderMap, java.io.File workspace) {
+	public static Collection<File> listAllFiles(Map<String, Folder> rootFolderMap, java.io.File workspace) {
 		Collection<File> result = new ArrayList<File>();
 
-    for (Map.Entry<String,Folder> f:rootFolderMap.entrySet()) {
-      result.addAll(listAllFiles(f.getValue(),workspace));
-    }
+		for (Map.Entry<String, Folder> f : rootFolderMap.entrySet()) {
+			result.addAll(listAllFiles(f.getValue(), workspace));
+		}
 
 		return result;
 	}
 
-  public static Collection<File> listAllFiles(Folder rootFolder, java.io.File workspace) {
+	public static Collection<File> listAllFiles(Folder rootFolder, java.io.File workspace) {
 		Collection<File> result = new ArrayList<File>();
-    // set root folder
+		// set root folder
 		String alternatePath = rootFolder.getAlternatePathFragment();
-		if (alternatePath == null)
-		{
+		if (alternatePath == null) {
 			alternatePath = "";
 		}
-		java.io.File actualPlace = new java.io.File(workspace,alternatePath);
+		java.io.File actualPlace = new java.io.File(workspace, alternatePath);
 		rootFolder.setAlternatePathFragment(actualPlace.getAbsolutePath());
 
 		// Get a list of all files
@@ -110,52 +45,114 @@ public class StarTeamFunctions {
 		return result;
 	}
 
-  private static void listAllFiles(Collection<File> result, Folder folder) {
-    for (Folder f : folder.getSubFolders()) {
-      listAllFiles(result, f);
-    }
-    // find items in this folder
-    for (Item i : folder.getItems(folder.getView().getProject().getServer()
-        .getTypeNames().FILE)) {
-      File f = (com.starbase.starteam.File) i;
-      try {
-        // This sometimes throws... deep inside starteam =(
-        result.add(f);
-      } catch (RuntimeException e) {
-        //todo logger.println("Exception in listAllFiles: "
-        // + e.getLocalizedMessage());
-      }
-    }
-  }
+	private static void listAllFiles(Collection<File> result, Folder folder) {
+		File.Type fileType = folder.getView().getServer().getTypes().FILE;
+		folder.getView().findItem(fileType, -1);
+		ViewMemberCollection allFilesAllDesc = new ViewMemberCollection();
 
+		folder.refreshItems(fileType, new PropertyCollection(fileType.getProperties().find(TypedResource.Type.IDProperty.NAME)), -1);
+		allFilesAllDesc.addAll(folder.getItems(fileType));
+		List<Folder> fldrs = getDescendantFolders(new ArrayList<Folder>(), folder);
+		for (int i = 0; i < fldrs.size(); i++) {
+			allFilesAllDesc.addAll(((Folder) fldrs.get(i)).getItems(fileType));
+		}
 
-  public static Map<String,String> splitCsvString(String multiplefolder) {
-    Map<String,String> folderMap = new HashMap<String,String>();
-    if (multiplefolder != null) {
-      for (String folderLine:multiplefolder.split("\n")) {
-        String folderLineNullable = StringUtils.trimToNull(folderLine);
-        if (folderLineNullable != null) {
-          String[] starteamWorkspace = folderLineNullable.split(",");
-          String starteamFolder = starteamWorkspace.length>0?StringUtils.trimToNull(starteamWorkspace[0]):null;
-          String workspacePath = starteamWorkspace.length>1?StringUtils.trimToNull(starteamWorkspace[1]):null;
-          if (workspacePath == null) {
-            workspacePath = ".";
-          }
-          if (starteamFolder != null && workspacePath != null) {
-            folderMap.put(starteamFolder,workspacePath);
-          }
-        }
-      }
-    }
-    return folderMap;
-  }
+		populateFileProperties(folder.getView().getServer(), allFilesAllDesc);
 
-public static Map<java.io.File,com.starbase.starteam.File> convertToFileMap(final Collection<com.starbase.starteam.File> collection) {
-    Map<java.io.File,com.starbase.starteam.File> result = new TreeMap<java.io.File,com.starbase.starteam.File>();
-    for (com.starbase.starteam.File f:collection) {
-      result.put(new java.io.File(f.getFullName()),f);
-    }
-    return result;
-  }
+		for (int i = 0; i < allFilesAllDesc.size(); i++) {
+			result.add((File) allFilesAllDesc.getAt(i));
+		}
+	}
 
+	public static Map<java.io.File, File> convertToFileMap(final Collection<File> starteamFiles) {
+		Map<java.io.File, File> result = new TreeMap<java.io.File, File>();
+		for (File f : starteamFiles) {
+			result.put(new java.io.File(f.getFullName()), f);
+		}
+		return result;
+	}
+
+	private static List<Folder> getDescendantFolders(List<Folder> l, Folder f) {
+		l.add(f);
+		Folder[] kids = f.getSubFolders();
+		for (int i = 0; i < kids.length; i++)
+			getDescendantFolders(l, kids[i]);
+		return l;
+	}
+
+	private static void populateFileProperties(Server server, ViewMemberCollection vmc) {
+		Type typ = server.getTypes().FILE;
+		PropertyCollection pc = new PropertyCollection();
+		pc.add(typ.getProperties().find(LiveObject.Type.NameProperty.NAME));
+		pc.add(typ.getProperties().find(ViewMember.Type.RootObjectIDProperty.NAME));
+		pc.add(typ.getProperties().find(File.Type.ContentVersionProperty.NAME));
+		pc.add(typ.getProperties().find(TypedResource.Type.IDProperty.NAME));
+		pc.add(typ.getProperties().find(com.starteam.VersionedObject.Type.RevisionNumberProperty.NAME));
+		pc.add(typ.getProperties().find(ViewMember.Type.DotNotationProperty.NAME));
+		pc.add(typ.getProperties().find(com.starteam.TrackedObject.Type.ModifiedByProperty.NAME));
+		pc.add(typ.getProperties().find(com.starteam.TrackedObject.Type.ModifiedTimeProperty.NAME));
+		pc.add(typ.getProperties().find(LiveObject.Type.CreatedTimeProperty.NAME));
+		pc.add(typ.getProperties().find(ViewMember.Type.CommentProperty.NAME));
+		pc.add(typ.getProperties().find(File.Type.MD5Property.NAME));
+		vmc.getCache().populate(pc);
+	}
+
+	/**
+	 * Find the given folder in the given view.
+	 *
+	 * @param view
+	 *            The view to look in.
+	 * @param folderPath
+	 *            The root folder-relative path of the folder to look for.
+	 *            An empty string signifies the root folder of the view.
+	 * @return The star team folder with the given folder path
+	 * @throws StarTeamSCMException if the folder cannot be found
+	 */
+	public static Folder findFolderInView(final View view, final String folderPath)
+			throws StarTeamSCMException {
+		// Check the root folder of the view
+		// leaving folder name blank will get the root view
+		if (folderPath.equals("")) {
+			return view.getRootFolder();
+		}
+		
+		Folder folder = findFolderWithPathInView(view, folderPath);
+
+		return folder;
+	}
+
+	private static Folder findFolderWithPathInView(final View view,
+			final String folderPath) throws StarTeamSCMException {
+		String[] folders = replaceSeparators(folderPath).split("/");
+		Folder stFolder = view.getRootFolder();
+		
+		for(String folder : folders){
+			for(Folder stChildFolder : stFolder.getSubFolders()){
+				if(folder.equals(stChildFolder.getName())){
+					stFolder = stChildFolder;
+					break;
+				}
+			}
+		}
+		checkCorrectFolderFound(view, folderPath, stFolder);
+		return stFolder;
+	}
+
+	private static void checkCorrectFolderFound(final View view,
+			final String folderPath, Folder stFolder)
+			throws StarTeamSCMException {
+		String stFolderHierarchy = replaceSeparators(stFolder.getFolderHierarchy());
+		String userEnteredFolderPath = view.getRootFolder().getName()+"/"+replaceSeparators(folderPath)+"/";
+		if(!userEnteredFolderPath.equals(stFolderHierarchy)){
+			throw new StarTeamSCMException("Couldn't find folder " + folderPath
+					+ " in view " + view.getName());
+		}
+	}
+
+	private static String replaceSeparators(String folderName) {
+		if(folderName.contains("\\")){
+			folderName = folderName.replace("\\", "/");
+		}
+		return folderName;
+	}
 }

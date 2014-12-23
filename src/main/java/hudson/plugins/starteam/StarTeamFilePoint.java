@@ -1,12 +1,12 @@
 package hudson.plugins.starteam;
 
-import java.io.Serializable;
 import java.io.File;
+import java.io.Serializable;
 
 /**
  * Stores a reference to the file at the particular revision.
  */
-public class StarTeamFilePoint implements Serializable, Comparable {
+public class StarTeamFilePoint implements Serializable, Comparable<Object> {
 
 	/**
 	 * 
@@ -20,7 +20,7 @@ public class StarTeamFilePoint implements Serializable, Comparable {
 		super();
 	}
 
-	public StarTeamFilePoint(com.starbase.starteam.File f) {
+	public StarTeamFilePoint(com.starteam.File f) {
 		this(f.getFullName(),f.getRevisionNumber());
 	}
 

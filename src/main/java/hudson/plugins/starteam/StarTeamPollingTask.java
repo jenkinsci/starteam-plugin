@@ -19,31 +19,23 @@ import java.util.Collection;
  * @author Steve Favez <sfavez@verisign.com>
  * 
  */
-public class StarTeamPollingActor implements FileCallable<Boolean> {
+public class StarTeamPollingTask implements FileCallable<Boolean> {
 
 	/**
 	 * serial version id.
 	 */
 	private static final long serialVersionUID = -5678102033953507247L;
 
-	private String hostname;
-
+	private String hostName;
 	private int port;
-
-	private String user;
-
-	private String passwd;
-
-	private String projectname;
-
-	private String viewname;
-
-	private String foldername;
-
+	private String userName;
+	private String password;
+	private String projectName;
+	private String viewName;
+	private String folderName;
+	private String labelName;
+	private boolean promotionstate;
 	private final TaskListener listener;
-
-	private final StarTeamViewSelector config;
-
 	private Collection<StarTeamFilePoint> historicFilePoints;
 
 	/**
@@ -59,19 +51,19 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param listener Hudson task listener.
 	 * @param historicFilePoints  
 	 */
-	public StarTeamPollingActor(String hostname, int port, String user,
-			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
-		this.hostname = hostname;
+	public StarTeamPollingTask(String hostname, int port, String user, String passwd, String projectname, String viewname,
+			String foldername, String labelName, boolean promotionstate, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
+		this.hostName = hostname;
 		this.port = port;
-		this.user = user;
-		this.passwd = passwd;
-		this.projectname = projectname;
-		this.viewname = viewname;
-		this.foldername = foldername;
+		this.userName = user;
+		this.password = passwd;
+		this.projectName = projectname;
+		this.viewName = viewname;
+		this.folderName = foldername;
 		this.listener = listener;
-		this.config = config;
-		this.historicFilePoints=historicFilePoints;
+		this.labelName = labelName;
+		this.promotionstate = promotionstate;
+		this.historicFilePoints = historicFilePoints;
 	}
 
 	/*
@@ -81,12 +73,9 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 *      hudson.remoting.VirtualChannel)
 	 */
 	public Boolean invoke(File f, VirtualChannel channel) throws IOException {
-
-		StarTeamConnection connection = new StarTeamConnection(
-				hostname, port, user, passwd,
-				projectname, viewname, foldername, config);
+		StarTeamConnection connection = new StarTeamConnection(hostName, port, userName, password, projectName, viewName, folderName, labelName, promotionstate);
 		try {
-			connection.initialize(-1);
+			connection.initialize();
 		} catch (StarTeamSCMException e) {
 			listener.getLogger().println(e.getLocalizedMessage());
 			connection.close();

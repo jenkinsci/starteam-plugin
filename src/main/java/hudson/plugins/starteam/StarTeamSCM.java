@@ -1,214 +1,132 @@
 package hudson.plugins.starteam;
 
+import static hudson.Util.fixEmptyAndTrim;
 import static java.util.logging.Level.SEVERE;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
+import hudson.model.Job;
+import hudson.model.Run;
 import hudson.scm.ChangeLogParser;
+import hudson.scm.PollingResult;
 import hudson.scm.SCMDescriptor;
+import hudson.scm.SCMRevisionState;
 import hudson.scm.SCM;
+import hudson.security.ACL;
+import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+
+
+
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.ParseException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 
-/**
- * StarTeam SCM plugin for Hudson.
- * Add support for change log and synchronization between starteam repository and hudson's workspace.
- * Add support for change log creation.
- * Refactoring to use Extension annotation and to remove use of deprecated API.
- *
- * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
- * @author Steve Favez <sfavez@verisign.com>
- */
+
 public class StarTeamSCM extends SCM {
 
-	/**
-	 * Singleton descriptor.
-	 */
+	private String hostName;
+	private int port;
+	private String projectName;
+	private String viewName;
+	private String folderName;
+	private String labelName;
+	private String credentialsId;
+	private boolean promotionstate;
+
+	private String userName;
+	private String password;
+	private static final Logger log = Logger.getLogger(StarTeamSCM.class.getName());
+	
+	/* backwards compatibility with configs from plugin 0.6.x */
+	@Deprecated private transient String hostname;
+	@Deprecated private transient String user;
+	@Deprecated private transient String  passwd;
+	@Deprecated private transient String projectname;
+	@Deprecated private transient String viewname;
+	@Deprecated private transient String foldername;
+	@Deprecated private transient String labelname; 
+	
+	   public Object readResolve() {
+		   if(hostname!=null) { hostName=hostname; hostname=null; }
+		   if(projectname!=null) { projectName=projectname; projectname=null; }
+		   if(viewname!=null) { viewName=viewname; viewname=null; }
+		   if(foldername!=null) { folderName= foldername.equals(projectName) ? "" : foldername; foldername=null; }
+		   if(labelname!=null) { labelName=labelname; labelname=null; }
+		   user=null;
+		   passwd=null;
+	       return this;
+	    }
+	   /* end of backwards compatibility block */
+
+	
+	@DataBoundConstructor
+	public StarTeamSCM(String hostName, int port, String projectName, String viewName, String folderName, String labelName, boolean promotionstate, String credentialsId) {
+		this.hostName = hostName;
+		this.port = port;
+		this.projectName = projectName;
+		this.viewName = viewName;
+		this.folderName = folderName;
+		this.labelName = labelName;
+		this.promotionstate = promotionstate;
+		this.credentialsId = credentialsId;
+	}
+
 	@Extension
 	public static final StarTeamSCMDescriptorImpl DESCRIPTOR = new StarTeamSCMDescriptorImpl();
 
-	private final String user;
-	private final String passwd;
-	private final String projectname;
-	private final String viewname;
-	private final String foldername;
-	private final String hostname;
-	private final int port;
-	private final String labelname;
-	private final boolean promotionstate;
-
-	private final StarTeamViewSelector config;
-	
-	/**
-	 * 
-	 * default stapler constructor.
-	 * 
-	 * @param hostname
-	 *            starteam host name.
-	 * @param port
-	 *            starteam port name
-	 * @param projectname
-	 *            name of the project
-	 * @param viewname
-	 *            name of the view
-	 * @param foldername
-	 *            parent folder name.
-	 * @param username
-	 *            the user name required to connect to starteam's server
-	 * @param password
-	 *            password required to connect to starteam's server
-	 * @param labelname
-	 *            label name used for polling view contents
-	 * @param promotionstate 
-	 *            indication if label name is actual label name or a promotion state name
-	 *
-	 */
-	@DataBoundConstructor
-	public StarTeamSCM(String hostname, int port, String projectname,
-			String viewname, String foldername, String username, String password, String labelname, boolean promotionstate) {
-		this.hostname = hostname;
-		this.port = port;
-		this.projectname = projectname;
-		this.viewname = viewname;
-		this.foldername = foldername;
-		this.user = username;
-		this.passwd = password;
-		this.labelname = labelname;
-		this.promotionstate = promotionstate;
-		StarTeamViewSelector result = null;
-		if ((this.labelname != null) && (this.labelname.length() != 0))
-		{
-			try {
-				if (this.promotionstate)
-				{
-					result = new StarTeamViewSelector(this.labelname,"Promotion");
-				} else {
-					result = new StarTeamViewSelector(this.labelname,"Label");
-				}
-			} catch (ParseException e) {
-				e.printStackTrace();
-				result = null;
-			}
-		}
-		this.config = result;
-	}
-
-	/*
-	 * @see hudson.scm.SCM#checkout(hudson.model.AbstractBuild, hudson.Launcher,
-	 *      hudson.FilePath, hudson.model.BuildListener, java.io.File)
-	 */
-	@Override
-	public boolean checkout(AbstractBuild build, Launcher launcher,
-	        FilePath workspace, BuildListener listener, File changelogFile)
-	throws IOException, InterruptedException {
-	    boolean status = false;
-
-	    //create a FilePath to be able to create changelog file on a remote computer.
-	    FilePath changeLogFilePath = new FilePath( changelogFile ) ;
-	    
-	    //create a FilePath to be able to create the filePointFile
-	    FilePath filePointFilePath = new FilePath(new File(build.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME));
-
-	    // Create an actor to do the checkout, possibly on a remote machine
-	    StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-	            port, user, passwd, projectname, viewname, foldername, config,
-	            changeLogFilePath, listener, build, filePointFilePath);
-	    if (workspace.act(co_actor)) {
-	        // change log is written during checkout (only one pass for
-	        // comparison)
-	        status = true;
-	    } else {
-	        listener.getLogger().println("StarTeam checkout failed");
-	        status = false;
-	    }
-	    return status;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see hudson.scm.SCM#createChangeLogParser()
-	 */
-	@Override
-	public ChangeLogParser createChangeLogParser() {
-		return new StarTeamChangeLogParser();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see hudson.scm.SCM#getDescriptor()
-	 */
-	@Override
-	public StarTeamSCMDescriptorImpl getDescriptor() {
-		return DESCRIPTOR;
-//		return (StarTeamSCMDescriptorImpl)super.getDescriptor();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see hudson.scm.SCM#pollChanges(hudson.model.AbstractProject,
-	 *      hudson.Launcher, hudson.FilePath, hudson.model.TaskListener)
-	 */
-	@Override
-	public boolean pollChanges(final AbstractProject proj,
-			final Launcher launcher, final FilePath workspace,
-			final TaskListener listener) throws IOException,
-			InterruptedException {
-		boolean status = false;
-		AbstractBuild<?,?> lastBuild = (AbstractBuild<?, ?>) proj.getLastBuild();
-
-		Collection<StarTeamFilePoint> historicFilePoints = null;
-		if(lastBuild!=null){
-			File historicFilePointFile = new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME);
-			if(historicFilePointFile.exists()){
-				historicFilePoints = StarTeamFilePointFunctions.loadCollection(historicFilePointFile);
-			}
-		}
+	public static class StarTeamSCMDescriptorImpl extends SCMDescriptor<StarTeamSCM> {
 		
-		// Create an actor to do the polling, possibly on a remote machine
-		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
-				user, passwd, projectname, viewname, foldername,
-				config, listener,
-				historicFilePoints);
-		if (workspace.act(p_actor)) {
-			status = true;
-		} else {
-			listener.getLogger().println("StarTeam polling shows no changes");
-		}
-		return status;
-	}
-
-	/**
-	 * Descriptor class for the SCM class.
-	 *
-	 * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
-	 *
-	 */
-	public static final class StarTeamSCMDescriptorImpl extends SCMDescriptor<StarTeamSCM> {
-
 		private final Collection<StarTeamSCM> scms = new ArrayList<StarTeamSCM>();
-		private static final Logger LOGGER = Logger.getLogger(StarTeamSCMDescriptorImpl.class.getName());
+		 private String starTeamJarPath;
 
 		public StarTeamSCMDescriptorImpl() {
 			super(StarTeamSCM.class, null);
-			load() ;
+			load();
+		}
+
+		@Override
+		public SCM newInstance(StaplerRequest req, JSONObject formData)	throws hudson.model.Descriptor.FormException {
+			StarTeamSCM scm = null;
+			try {
+				scm = req.bindJSON(StarTeamSCM.class, formData);
+				scms.add(scm);
+			} catch (RuntimeException e) {
+				log.log(SEVERE, e.getMessage(), e);
+			}
+			return scm;
+
+		}
+
+		@Override
+		public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+			starTeamJarPath = fixEmptyAndTrim(req.getParameter("starteam.starTeamJarPath"));
+			save();
+			return true;
 		}
 
 		@Override
@@ -216,117 +134,180 @@ public class StarTeamSCM extends SCM {
 			return "StarTeam";
 		}
 
-		@Override
-		public SCM newInstance(StaplerRequest req, JSONObject formData)
-				throws hudson.model.Descriptor.FormException {
-			// Go ahead and create the scm.. the bindParameters() method
-			// takes the request and nabs all "starteam." -prefixed
-			// parameters from it, then sets the scm instance's fields
-			// according to those parameters.
-			StarTeamSCM scm = null;
+		@Restricted(NoExternalUse.class)
+		void setStarTeamJarPath(String path) {
+			starTeamJarPath = path;
+		}
+
+		public String getStarTeamJarPath() {
+			return starTeamJarPath;
+		}
+		
+		public ListBoxModel doFillCredentialsIdItems() {
+			return new StandardUsernameListBoxModel()
+				.withEmptySelection()
+				.withAll(CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM, new ArrayList<DomainRequirement>())
+            );
+		}
+		
+		public FormValidation doCheckStarTeamJarPath(@QueryParameter String value) {
+			if(fixEmptyAndTrim(value)==null) {
+				String sdkEnv = StarTeamSdkLoader.getSdkEnvLocation();
+				if(fixEmptyAndTrim(sdkEnv)==null) return FormValidation.warning("No SDK_LOCATION in env, please specify full path to starteam140.jar");
+				String starTeamJarPath = StarTeamSdkLoader.getSdkJarFromFolder(sdkEnv);
+				if(starTeamJarPath==null) FormValidation.warning("StarTeam SDK not found in SDK_LOCATION, please specify full path to starteam140.jar");
+				value = starTeamJarPath;
+	}
+
 			try {
-				scm = req.bindParameters(StarTeamSCM.class, "starteam.");
-				scms.add(scm);
-			} catch (RuntimeException e) {
-			    LOGGER.log(SEVERE, e.getMessage(), e);
+				List<String> locations = StarTeamSdkLoader.checkSdkIsOnPath(value);
+				if(locations.size()==1)	{
+					return FormValidation.okWithMarkup("StarTeam SDK successfully loaded  (<a href='#' class='showDetails'>details</a>)"
+							+"<pre style='display:none'>"+locations.get(0)+"</pre>");
+				}
+				else {
+					String locationList = "using SDK from :"+locations.get(0);
+					locationList+= "<br>Other locations found:<br>";
+					for(int i=1;i<locations.size();i++) locationList+=locations.get(i)+"<br>";
+					return FormValidation.warningWithMarkup("StarTeam SDK found in multiple locations (<a href='#' class='showDetails'>details</a>)"
+							+"<pre style='display:none'>"+locationList+"</pre>");
+				}
+				
+			} catch (MalformedURLException e) {
+				return FormValidation.warning(e,"Could not locate StarTeam SDK, please specify valid path to starteam140.jar");
+			} catch (ClassNotFoundException e) {
+				return FormValidation.warning(e,"Could not locate StarTeam SDK, please specify full path to starteam140.jar");
+			} catch (FileNotFoundException e) {
+				return FormValidation.warning(e,"File not found, please specify full path to starteam140.jar");
+			} catch (IOException e) {
+				return FormValidation.warning(e,"Error, please specify full path to starteam140.jar");
 			}
-			// We don't have working repo browsers yet...
-			// scm.repositoryBrowser = RepositoryBrowsers.createInstance(
-			// StarTeamRepositoryBrowser.class, req, "starteam.browser");
-			return scm;
+		}
+		
+		public FormValidation doCheckHostName(@QueryParameter String value) { 
+			if(fixEmptyAndTrim(value)==null) return FormValidation.error("Hostname is required");
+			return FormValidation.ok();
+		}
+		public FormValidation doCheckPort(@QueryParameter Integer value) { 
+			if(value==null) return FormValidation.error("Port is required");
+			return FormValidation.ok();
+		}
+		public FormValidation doCheckProjectName(@QueryParameter String value) { 
+			if(fixEmptyAndTrim(value)==null) return FormValidation.error("Project name is required");
+			return FormValidation.ok();
+		}
+		public FormValidation doCheckViewName(@QueryParameter String value) { 
+			return FormValidation.ok();
+		}
+		public FormValidation doCheckFolderName(@QueryParameter String value) { 
+			return FormValidation.ok();
+		}
+		
+		public FormValidation doTestConnection(@QueryParameter("hostName") String hostName,
+									      	   @QueryParameter("port") int port,
+									      	   @QueryParameter("projectName") String projectName,
+									      	   @QueryParameter("viewName") String viewName,
+									      	   @QueryParameter("folderName") String folderName,
+									      	   @QueryParameter("labelName") String labelName,
+									      	   @QueryParameter("promotionstate") boolean isPromotionState,
+									      	   @QueryParameter("credentialsId") String credentialsId) {
+
+			StandardUsernamePasswordCredentials cred = CredentialsMatchers.firstOrNull(
+					CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
+							Collections.<DomainRequirement> emptyList()), CredentialsMatchers.withId(credentialsId));
+
+			String username = cred.getUsername();
+			String password = cred.getPassword().getPlainText();
+			try {
+				loadStarTeamSdk();
+			} catch (Exception e) {
+				return FormValidation.error(e, "Could not load StarTeam SDK library, please specify valid path to starteam140.jar in global configuration");
+			}
+			try {
+				StarTeamConnection connection = new StarTeamConnection(hostName, port, username, password, projectName, viewName, folderName, labelName, isPromotionState);
+				connection.initialize();
+			} catch (Exception e) {
+				return FormValidation.error(e, "Could not connect to StarTeam");
+			}
+			return FormValidation.ok("Connection Successful");
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see hudson.model.Descriptor#configure(org.kohsuke.stapler.StaplerRequest)
-		 */
-		@Override
-		public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-			// This is used for the global configuration
-			return true;
+		public void loadStarTeamSdk() {
+			StarTeamSdkLoader.loadSDK(getStarTeamJarPath(), getClass().getClassLoader());
+		}
+	}
+	
+	@Override
+	 public StarTeamSCMDescriptorImpl getDescriptor() {
+	 return (StarTeamSCMDescriptorImpl)super.getDescriptor();
+	 }
+
+	@Override
+	public void checkout(Run<?, ?> build, Launcher launcher, FilePath workspace, TaskListener listener, File changelogFile, SCMRevisionState baseline) throws IOException, InterruptedException {
+		
+		getDescriptor().loadStarTeamSdk();
+		
+		FilePath changeLogFilePath = new FilePath(changelogFile) ;
+		FilePath filePointFilePath = new FilePath(new File(build.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME));
+
+		setCredentials();	
+		StarteamSyncWorkSpaceTask task = new StarteamSyncWorkSpaceTask(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionstate, build, changeLogFilePath, filePointFilePath, listener);
+		workspace.act(task); // The StarteamSyncWorkSpaceTask.invoke() method is now invoked
+	}
+
+	@Override
+	public SCMRevisionState calcRevisionsFromBuild(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
+		return SCMRevisionState.NONE;
+	}
+
+	@Override
+	public PollingResult compareRemoteRevisionWith(Job<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline) throws IOException, InterruptedException {
+		PollingResult status = PollingResult.NO_CHANGES;
+		AbstractBuild<?,?> lastBuild = (AbstractBuild<?, ?>) project.getLastBuild();
+
+		Collection<StarTeamFilePoint> historicFilePoints = null;
+		if(lastBuild!=null){
+			File historicRevisionFile = new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME);
+			if(historicRevisionFile.exists()){
+				historicFilePoints = StarTeamFilePointFunctions.loadCollection(historicRevisionFile);
+			}
 		}
 
+		setCredentials();	
+		StarTeamPollingTask p_actor = new StarTeamPollingTask(hostName, port, userName, password, projectName, viewName, folderName, labelName, promotionstate, listener, historicFilePoints);
+
+		getDescriptor().loadStarTeamSdk();
+		if (workspace.act(p_actor)) {
+			status = PollingResult.SIGNIFICANT;
+		} else {
+			if(listener!=null) 
+			listener.getLogger().println("StarTeam polling shows no changes");
+		}
+		return status;
 	}
 
-	/**
-	 * Get the hostname this SCM is using.
-	 *
-	 * @return The hostname.
-	 */
-	public String getHostname() {
-		return hostname;
+	@Override
+	public ChangeLogParser createChangeLogParser() {
+		return new StarTeamChangeLogParser();
 	}
 
-	/**
-	 * Get the port number this SCM is using.
-	 *
-	 * @return The port.
-	 */
-	public int getPort() {
-		return port;
+	private void setCredentials() {
+		StandardUsernamePasswordCredentials cred = CredentialsMatchers.firstOrNull(
+				CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, Jenkins.getInstance(),ACL.SYSTEM,Collections.<DomainRequirement>emptyList()),
+				CredentialsMatchers.withId(credentialsId)
+				);
+
+		this.userName = cred.getUsername();
+		this.password = cred.getPassword().getPlainText();
 	}
 
-	/**
-	 * Get the project name this SCM is connected to.
-	 *
-	 * @return The project's name.
-	 */
-	public String getProjectname() {
-		return projectname;
-	}
-
-	/**
-	 * Get the view name in the project this SCM uses.
-	 *
-	 * @return The name of the view.
-	 */
-	public String getViewname() {
-		return viewname;
-	}
-
-	/**
-	 * Get the root folder name of our monitored workspace.
-	 *
-	 * @return The name of the folder.
-	 */
-	public String getFoldername() {
-		return foldername;
-	}
-
-	/**
-	 * Get the username used to connect to starteam.
-	 *
-	 * @return The username.
-	 */
-	public String getUsername() {
-		return user;
-	}
-
-	/**
-	 * Get the password used to connect to starteam.
-	 *
-	 * @return The password.
-	 */
-	public String getPassword() {
-		return passwd;
-	}
-
-	/**
-	 * Get the label used to check out from starteam.
-	 *
-	 * @return The label.
-	 */
-	public String getLabelname() {
-		return labelname;
-	}
-
-	/**
-	 * Is the label a promotion state name?
-	 *
-	 * @return True if the label name is actually a promotion state.
-	 */
-	public boolean isPromotionstate() {
-		return promotionstate;
-	}
+	//required for jelly to populate fields if configuration saved
+	public String getHostName() {return hostName;}
+	public int getPort() {return port;}
+	public String getProjectName() {return projectName;}
+	public String getViewName() {return viewName;}
+	public String getFolderName() {return folderName;}
+	public String getLabelName() {return labelName;}
+	public boolean isPromotionstate() {return promotionstate;}
+	public String getCredentialsId() { return credentialsId;}
 }

@@ -18,19 +18,13 @@ import java.util.LinkedList;
 public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
 
   private int revisionNumber;
-
   private String username;
-
   private String msg;
-
   private Date date;
-
   private String fileName;
-
   private String changeType;
 
-  public StarTeamChangeLogEntry(String fileName, int revisionNumber, Date date,
-      String username, String msg, String changeType) {
+  public StarTeamChangeLogEntry(String fileName, int revisionNumber, Date date, String username, String msg, String changeType) {
     super();
     this.revisionNumber = revisionNumber;
     this.username = username;
@@ -125,10 +119,8 @@ public class StarTeamChangeLogEntry extends hudson.scm.ChangeLogSet.Entry {
     return buffer.toString();
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
+  @SuppressWarnings("rawtypes")
   public void setParent(ChangeLogSet parent) {
     super.setParent(parent);
   }

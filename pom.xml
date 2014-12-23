@@ -28,7 +28,7 @@ THE SOFTWARE.
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.568</version>
+    <version>1.581</version>
   </parent>
 
   <artifactId>StarTeam</artifactId>
@@ -116,6 +116,15 @@ THE SOFTWARE.
 				<role>Developer</role>
 			</roles>
 			<timezone>-7</timezone>
+		</developer>
+		<developer>
+			<id>framer8</id>
+			<name>Paul Adamson</name>
+			<email>jenkins@pauladamson.co.uk</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>0</timezone>
 		</developer>
 	</developers>
 	<contributors>

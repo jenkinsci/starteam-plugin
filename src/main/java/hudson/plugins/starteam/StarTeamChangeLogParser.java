@@ -32,8 +32,7 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
    * {@inheritDoc}
    */
   @Override
-  public ChangeLogSet<? extends Entry> parse(AbstractBuild build,
-      File changelogFile) throws IOException, SAXException {
+  public ChangeLogSet<? extends Entry> parse(AbstractBuild build, File changelogFile) throws IOException, SAXException {
     return parse0(build, new FileInputStream(changelogFile),
         changelogFile.getAbsolutePath());
   }
@@ -47,8 +46,7 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
    *          input stream containing the change log
    * @return the change log set
    */
-  public static StarTeamChangeLogSet parse(AbstractBuild aBuild,
-      InputStream aChangeLogStream) throws IOException, SAXException {
+  public static StarTeamChangeLogSet parse(AbstractBuild aBuild, InputStream aChangeLogStream) throws IOException, SAXException {
     return parse0(aBuild, aChangeLogStream, null);
   }
 
@@ -61,17 +59,14 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
       };
 
   @SuppressWarnings("unchecked")
-  private static StarTeamChangeLogSet parse0(AbstractBuild aBuild,
-      InputStream aChangeLogStream, String filePath) throws IOException,
+  private static StarTeamChangeLogSet parse0(AbstractBuild aBuild, InputStream aChangeLogStream, String filePath) throws IOException,
       SAXException {
 
-    ArrayList<StarTeamChangeLogEntry> changeLogEntries =
-        new ArrayList<StarTeamChangeLogEntry>();
+    ArrayList<StarTeamChangeLogEntry> changeLogEntries =  new ArrayList<StarTeamChangeLogEntry>();
 
     SAXReader reader = new SAXReader();
     Document changeDoc = null;
-    StarTeamChangeLogSet changeLogSet =
-        new StarTeamChangeLogSet(aBuild, changeLogEntries);
+    StarTeamChangeLogSet changeLogSet = new StarTeamChangeLogSet(aBuild, changeLogEntries);
 
     try {
       changeDoc = reader.read(aChangeLogStream);
@@ -90,17 +85,14 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
         StarTeamChangeLogEntry change = new StarTeamChangeLogEntry();
 
         if (node.selectSingleNode("fileName") != null) {
-          change
-              .setFileName(node.selectSingleNode("fileName").getStringValue());
+          change.setFileName(node.selectSingleNode("fileName").getStringValue());
         }
         if (node.selectSingleNode("revisionNumber") != null) {
-          change.setRevisionNumber(Integer.parseInt((node
-              .selectSingleNode("revisionNumber").getStringValue())));
+          change.setRevisionNumber(Integer.parseInt((node.selectSingleNode("revisionNumber").getStringValue())));
         }
 
         if (node.selectSingleNode("date") != null) {
-          change.setDate(TIME_FORMATTER.get().parse(
-              node.selectSingleNode("date").getStringValue()));
+          change.setDate(TIME_FORMATTER.get().parse(node.selectSingleNode("date").getStringValue()));
         }
 
         if (node.selectSingleNode("message") != null) {
@@ -112,16 +104,14 @@ public class StarTeamChangeLogParser extends ChangeLogParser {
         }
 
         if (node.selectSingleNode("changeType") != null) {
-          change.setChangeType(node.selectSingleNode("changeType")
-              .getStringValue());
+          change.setChangeType(node.selectSingleNode("changeType").getStringValue());
         }
 
         change.setParent(changeLogSet); // Assign Parent
         changeLogEntries.add(change);
       }
     } catch (Exception e) {
-      throw new IOException("Failed to parse changelog file"
-          + (filePath != null ? filePath : "") + ": " + e.getMessage(), e);
+      throw new IOException("Failed to parse changelog file" + (filePath != null ? filePath : "") + ": " + e.getMessage(), e);
     }
     return changeLogSet;
   }

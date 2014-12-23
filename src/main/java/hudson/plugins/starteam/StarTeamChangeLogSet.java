@@ -27,8 +27,7 @@ public class StarTeamChangeLogSet extends ChangeLogSet<StarTeamChangeLogEntry> {
 	 * @param logs
 	 * 		all log entries.
 	 */
-	public StarTeamChangeLogSet(AbstractBuild<?, ?> aBuild,
-			List<StarTeamChangeLogEntry> logs) {
+	public StarTeamChangeLogSet(AbstractBuild<?, ?> aBuild,	List<StarTeamChangeLogEntry> logs) {
 		super(aBuild);
 		this.history = Collections.unmodifiableList(logs);
 	}

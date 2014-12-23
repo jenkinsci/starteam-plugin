@@ -3,55 +3,35 @@
  */
 package hudson.plugins.starteam;
 
-import hudson.FilePath;
-
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
-import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
+import static hudson.Util.fixEmptyAndTrim;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
+import com.starteam.CommandProcessor;
+import com.starteam.File;
+import com.starteam.Folder;
+import com.starteam.Label;
+import com.starteam.Project;
+import com.starteam.PromotionState;
+import com.starteam.Server;
+import com.starteam.ServerInfo;
+import com.starteam.View;
+import com.starteam.ViewConfiguration;
+import com.starteam.exceptions.DuplicateServerListEntryException;
+import com.starteam.exceptions.LogonException;
 
-import com.starbase.starteam.ClientApplication;
-import com.starbase.starteam.File;
-import com.starbase.starteam.Folder;
-import com.starbase.starteam.Item;
-import com.starbase.starteam.LogonException;
-import com.starbase.starteam.Project;
-import com.starbase.starteam.PropertyNames;
-import com.starbase.starteam.Server;
-import com.starbase.starteam.ServerAdministration;
-import com.starbase.starteam.ServerConfiguration;
-import com.starbase.starteam.ServerInfo;
-import com.starbase.starteam.Status;
-import com.starbase.starteam.User;
-import com.starbase.starteam.UserAccount;
-import com.starbase.starteam.View;
-import com.starbase.starteam.vts.comm.NetMonitor;
-import com.starbase.util.OLEDate;
 
-/**
- * StarTeamActor is a class that implements connecting to a StarTeam repository,
- * to a given project, view and folder.
- * 
- * Add functionality allowing to delete non starteam file in folder while
- * performing listing of all files. and to perform creation of changelog file
- * during the checkout
- *
- * @author Ilkka Laukkanen <ilkka.s.laukkanen@gmail.com>
- * @author Steve Favez <sfavez@verisign.com>
- *
- */
 public class StarTeamConnection implements Serializable {
 	private static final long serialVersionUID = 1L;
+	private final static Pattern labelPattern = Pattern.compile("%\\{(.*?):BUILD_NUMBER\\}");
 
 	public static final String FILE_POINT_FILENAME = "starteam-filepoints.csv";
 
@@ -62,27 +42,14 @@ public class StarTeamConnection implements Serializable {
 	private final String projectName;
 	private final String viewName;
 	private final String folderName;
-	private final StarTeamViewSelector configSelector;
+	private String labelName;
+	private boolean promotionstate;
+
 
 	private transient Server server;
 	private transient View view;
 	private transient Folder rootFolder;
 	private transient Project project;
-	private transient boolean canReadUserAccts = true;
-
-	static {
-		try {
-			String netmonFile = System.getProperty("st.netmon.out");
-			if (netmonFile != null) {
-				NetMonitor.onFile(new java.io.File(netmonFile));
-			}
-		} catch (Throwable t) { // catch throwable to make sure the class loads, logging isn't essential
-			try {
-				System.err.println("Can't write StarTeam network monitor logs to netmon.out: " + t);
-			} catch (Throwable ignore) {
-			}
-		}
-	}
 
 	/**
 	 * Default constructor
@@ -105,7 +72,7 @@ public class StarTeamConnection implements Serializable {
 	 *            configuration selector 
 	 *            in case of checking from label, promotion state or time
 	 */
-	public StarTeamConnection(String hostName, int port, String userName, String password, String projectName, String viewName, String folderName, StarTeamViewSelector configSelector) {
+	public StarTeamConnection(String hostName, int port, String userName, String password, String projectName, String viewName, String folderName, String labelName, boolean promotionstate) {
 		checkParameters(hostName, port, userName, password, projectName, viewName, folderName);
 		this.hostName = hostName;
 		this.port = port;
@@ -114,72 +81,49 @@ public class StarTeamConnection implements Serializable {
 		this.projectName = projectName;
 		this.viewName = viewName;
 		this.folderName = folderName;
-		this.configSelector = configSelector;
+		this.labelName = labelName;
+		this.promotionstate = promotionstate;
 	}
 
-	public StarTeamConnection(StarTeamConnection oldConnection, StarTeamViewSelector configSelector) {
-		this(oldConnection.hostName, oldConnection.port,
-				oldConnection.userName, oldConnection.password,
-				oldConnection.projectName, oldConnection.viewName,
-				oldConnection.folderName, configSelector);
-	}
-	private ServerInfo createServerInfo() {
-		ServerInfo serverInfo = new ServerInfo();
-		serverInfo.setConnectionType(ServerConfiguration.PROTOCOL_TCP_IP_SOCKETS);
-		serverInfo.setHost(this.hostName);
-		serverInfo.setPort(this.port);
-
-		populateDescription(serverInfo);
-
-		return serverInfo;
-	}
-
-	/**
-	 * populate the description of the server info.
-	 *
-	 * @param serverInfo
-	 */
-	void populateDescription(ServerInfo serverInfo) {
-		// Increment a counter until the description is unique
-		int counter = 0;
-		while (!setDescription(serverInfo, counter))
-			++counter;
-	}
-
-	private boolean setDescription(ServerInfo serverInfo, int counter) {
-		try {
-			serverInfo.setDescription("StarTeam connection to " + this.hostName + ((counter == 0) ? "" : " (" + Integer.toString(counter) + ")"));
-			return true;
-		} catch (com.starbase.starteam.DuplicateServerListEntryException e) {
-			return false;
-		}
-	}
-
-	private void checkParameters(String hostName, int port, String userName, String password, String projectName, String viewName,
+	private static void checkParameters(String hostName, int port, String userName, String password, String projectName, String viewName,
 			String folderName) {
-		if (null == hostName)
-			throw new NullPointerException("hostName cannot be null");
-		if (null == userName)
-			throw new NullPointerException("user cannot be null");
-		if (null == password)
-			throw new NullPointerException("passwd cannot be null");
-		if (null == projectName)
-			throw new NullPointerException("projectName cannot be null");
-		if (null == viewName)
-			throw new NullPointerException("viewName cannot be null");
-		if (null == folderName)
-			throw new NullPointerException("folderName cannot be null");
-
+		if (fixEmptyAndTrim(hostName)==null) throw new NullPointerException("hostName cannot be null");
+		if (fixEmptyAndTrim(userName)==null) throw new NullPointerException("user cannot be null");
+		if (fixEmptyAndTrim(password)==null) throw new NullPointerException("passwd cannot be null");
+		if (fixEmptyAndTrim(projectName)==null)	throw new NullPointerException("projectName cannot be null");
 		if ((port < 1) || (port > 65535))
 			throw new IllegalArgumentException("Invalid port: " + port);
+	}
+
+	private ServerInfo createServerInfo() {
+		ServerInfo serverInfo = new ServerInfo();
+		serverInfo.setHost(this.hostName);
+		serverInfo.setPort(this.port);
+		populateDescription(serverInfo);
+		return serverInfo;
 	}
 
 	/**
 	 * Initialize the connection. This means logging on to the server and
 	 * finding the project, view and folder we want.
 	 * 
-	 * @param buildNumber a job build number, or -1 if not associated with a job.
-	 * @throws StarTeamSCMException if logging on fails.
+	 * @throws StarTeamSCMException if logging on fails or if the project, view,
+	 * promotion state, label, or folder cannot be found on the server
+	 */
+	public void initialize() throws StarTeamSCMException{
+		initialize(-1);
+	}
+	
+	/**
+	 * Initialize the connection. This means logging on to the server and
+	 * finding the project, view and folder we want.
+	 * 
+	 * @param buildNumber the number of the current build, only used by the 
+	 * secret create label functionality.  -1 indicates that this is a polling 
+	 * task and labels should not be created
+	 * 
+	 * @throws StarTeamSCMException if logging on fails or if the project, view,
+	 * promotion state, label, or folder cannot be found on the server
 	 */
 	public void initialize(int buildNumber) throws StarTeamSCMException {
 		/* 
@@ -190,221 +134,154 @@ public class StarTeamConnection implements Serializable {
 		   will be seen as an Unknown Client, and may be blocked by StarTeam repositories
 		   that take advantage of this feature.  This must be called before a connection
 		   to the server is established.
-		*/ 
-		ClientApplication.setName("StarTeam Plugin for Jenkins");
-		
+		 */ 
+		//com.starbase.starteam.ClientApplication.setName("StarTeam Plugin for Jenkins");
+
 		server = new Server(createServerInfo());
 		server.connect();
+		logOnToServer();
+
+		project = server.findProject(projectName);
+		validateProject();
+
+		view = "".equals(viewName) ? project.getDefaultView() : project.findView(viewName);
+		validateView();
+
+		if (isPromotionState()){
+			PromotionState promState = view.getPromotionModel().findPromotionState(labelName);
+			validatePromotionState(promState);
+			view = new View(view, ViewConfiguration.createFrom(promState));
+		} else if (isLabel() && !isPollingBuild(buildNumber)) {
+			Label label = null;
+
+			if(isCreateLabelString(labelName)){
+				label = createLabel(buildNumber);
+			} else {
+				label = view.findLabel(labelName);
+			}
+			validateLabel(label);
+			view = new View(view, ViewConfiguration.createFrom(label));
+
+		} else {
+			view = new View(view, ViewConfiguration.createTip());
+		}
+
+		rootFolder = StarTeamFunctions.findFolderInView(view, folderName);
+		validateFolder();
+	}
+	
+	private void logOnToServer() throws StarTeamSCMException {
 		try {
 			server.logOn(userName, password);
 		} catch (LogonException e) {
 			throw new StarTeamSCMException("Could not log on: " + e.getErrorMessage());
 		}
-
-		project = findProjectOnServer(server, projectName);
-		view = findViewInProject(project, viewName);
-		if (configSelector != null)
-		{
-			View configuredView = null;
-			try {
-				configuredView = configSelector.configView(view, buildNumber);
-			} catch (ParseException e) {
-				throw new StarTeamSCMException("Could not correctly parse configuration date: " + e.getMessage());
-			}
-			if (configuredView != null)
-				view = configuredView;
-		}
-		rootFolder = StarTeamFunctions.findFolderInView(view, folderName);
-
-		// Cache some folder data
-		final PropertyNames pnames = rootFolder.getPropertyNames();
-		final String[] filePropsToCache = new String[] { pnames.FILE_LOCAL_FILE_EXISTS, pnames.FILE_LOCAL_TIMESTAMP, pnames.FILE_NAME,
-				pnames.FILE_FILE_TIME_AT_CHECKIN, pnames.MODIFIED_TIME, pnames.MODIFIED_USER_ID, pnames.FILE_STATUS,
-				pnames.COMMENT,
-		};
-		final String[] folderPropsToCache = new String[] { pnames.FOLDER_WORKING_FOLDER };
-		rootFolder.populateNow(server.getTypeNames().FILE, filePropsToCache, -1);
-		rootFolder.populateNow(server.getTypeNames().FOLDER, folderPropsToCache, -1);
 	}
-
+	
+	private void validateProject() throws StarTeamSCMException {
+		if (project == null){
+			throw new StarTeamSCMException("Could not find project " + projectName + " on server " + server.getAddress());
+		}
+	}
+	
+	private void validateView() throws StarTeamSCMException {
+		if (view == null){
+			throw new StarTeamSCMException("Could not find view " + viewName + " in project " + project.getName());
+		}
+	}
+	
+	private boolean isPromotionState() {
+		return isLabel() && promotionstate;
+	}
+	
+	private boolean isLabel() {
+		return labelName != null && !labelName.isEmpty();
+	}
+	
+	private void validatePromotionState(PromotionState promState)
+			throws StarTeamSCMException {
+		if (promState == null){
+			throw new StarTeamSCMException("Could not find promotion state " + labelName + " in view " + view.getName());
+		}
+	}
+	
+	private boolean isPollingBuild(int buildNumber) {
+		return buildNumber == -1;
+	}
+	
 	/**
-	 * checkout the files from starteam
-	 *
-	 * @param changeSet a description of changes  
-	 * @param filePointFilePath A FilePath reprensenting the file points file where to store the change set
-	 * @throws IOException if checkout fails.
+	 * Checks whether the label entered matches the secret regex for creating labels
+	 * 
+	 * @param labelName the label name entered in the advanced starteam config option
+	 * @return true if the label entered matches the regex "%\\{(.*?):BUILD_NUMBER\\}"
+	 * false otherwise
 	 */
-	public void checkOut(StarTeamChangeSet changeSet, PrintStream logger, FilePath filePointFilePath) throws IOException {
-	    logger.println("*** Performing checkout on [" + changeSet.getFilesToCheckout().size() + "] files");
-	    boolean quietCheckout = changeSet.getFilesToCheckout().size() >= 2000;
-	    if (quietCheckout) {
-	      logger.println("*** More than 2000 files, quiet mode enabled");
-	    }
-		for (File f : changeSet.getFilesToCheckout()) {
-			boolean dirty = true;
-			switch (f.getStatus()) {
-				case Status.UNKNOWN:
-					dirty = false;
-				case Status.NEW:
-				case Status.MERGE:
-				case Status.MODIFIED:
-					// clobber these
-					new java.io.File(f.getFullName()).delete();
-				    if (!quietCheckout) logger.println("[co] Deleted File: " + f.getFullName());
-					break;
-				case Status.MISSING:
-				case Status.OUTOFDATE:
-					dirty = false;
-					// just go on and check out
-					break;
-				default:
-					// By default do nothing, go to next iteration
-					continue;
-			}
-			if (!quietCheckout)
-				logger.println("[co] " + f.getFullName() + "... attempt");
-			try {
-				f.checkout(Item.LockType.UNCHANGED, // leave the lock as is, changing lock for item in the past is impossible
-						true, // use timestamp from local time
-						true, // convert EOL to native format
-						true); // update status
-			} catch (IOException e) {
-				logger
-						.print("[checkout] [exception] [Problem checking out file: "
-								+ f.getFullName()
-								+ "] \n"
-								+ ExceptionUtils.getFullStackTrace(e) + "\n");
-				throw e;
-			} catch (RuntimeException e) {
-				logger
-						.print("[checkout] [exception] [Problem checking out file: "
-								+ f.getFullName()
-								+ "] \n"
-								+ ExceptionUtils.getFullStackTrace(e) + "\n");
-				throw e;
-			}
-			if (dirty) {
-				changeSet.getChanges().add(FileToStarTeamChangeLogEntry(f,"dirty"));
-			}
-			if (!quietCheckout) logger.println("[co] " + f.getFullName() + "... ok");
-		}
-		logger.println("*** removing [" + changeSet.getFilesToRemove().size() + "] files");
-		boolean quietDelete = changeSet.getFilesToRemove().size() > 100;
-		if (quietDelete) {
-			logger.println("*** More than 100 files, quiet mode enabled");
-		}
-		for (java.io.File f : changeSet.getFilesToRemove()) {
-			if (f.exists()) {
-				if (!quietDelete) logger.println("[remove] [" + f + "]");
-				f.delete();
-			} else {
-				logger.println("[remove:warn] Planned to remove [" + f + "]");
-			}
-		}
-		logger.println("*** storing change set");
-		OutputStream os = null;
-		try {
-			os = new BufferedOutputStream(filePointFilePath.write());
-			StarTeamFilePointFunctions.storeCollection(os, changeSet.getFilePointsToRemember());
-		} catch (InterruptedException e) {
-			logger.println( "unable to store change set " +  e.getMessage()) ;
-		}finally{
-			if(os !=null){
-				os.close();
-			}
-		}
-		logger.println("***checkout done");
+	private boolean isCreateLabelString(String labelName){
+		Matcher m = labelPattern.matcher(labelName);
+		return m.find();
 	}
-
+	
+	private Label createLabel(int buildNumber) throws StarTeamSCMException {
+		String expandedLabelName = expandLabelPattern(labelName, buildNumber);
+		final String labelDesc = String.format("Jenkins build %d", buildNumber);
+		final boolean buildLabel = true;
+		final boolean frozen = true;
+		Label label = view.createViewLabel(expandedLabelName, labelDesc, com.starteam.util.DateTime.CURRENT_SERVER_TIME, buildLabel, frozen);
+		labelName = label.getName();
+		return label;
+	}
+	
 	/**
-	 * Returns the name of the user on the StarTeam server with the specified
-	 * id. StarTeam stores user IDs as int values and this method will translate
-	 * those into the actual user name. <br/> This can be used, for example,
-	 * with a StarTeam {@link Item}'s {@link Item#getModifiedBy()} property, to
-	 * determine the name of the user who made a modification to the item.
-	 *
-	 * @param userId
-	 *            the id of the user on the StarTeam Server
-	 * @return the name of the user as provided by the StarTeam Server
+	 * Expands the regex entered in the label name and includes the build number
+	 * with the appropriate format
+	 * 
+	 * @param labelName the label name entered in the advanced starteam config option
+	 * @param buildNumber the number of the current build
+	 * @return the labep pattern expanded to include the build number
+	 * examples using build number 123:
+	 * Label pattern							Expanded string
+	 * ""										""
+	 * "L1"										"L1",
+	 * "L1%"									"L1%"
+	 * "%{d:BUILD_NUMBER}"						"123"
+	 * "%{05d:BUILD_NUMBER}"					"00123"
+	 * "%{x:BUILD_NUMBER}"						"7b"
+	 * "%{X:BUILD_NUMBER}"						"7B"
+	 * "%{04x:BUILD_NUMBER}"					"007b"
+	 * "%{#x:BUILD_NUMBER}"						"0x7b"
+	 * "prefix.%{d:BUILD_NUMBER}.suffix"		"prefix.123.suffix"}
+	 * "%{d:BUILD_NUMBER}-%{x:BUILD_NUMBER}"	"123-7b"},
 	 */
-	public String getUsername(int userId) {
-		User stUser = server.getUser(userId);
-		String userName =stUser.getName();
-		ServerAdministration srvAdmin = server.getAdministration();
-		UserAccount[] userAccts = null;
-		if (canReadUserAccts) {
-			try {
-				userAccts = srvAdmin.getUserAccounts();
-			} catch (Exception e) {
-				// System.out.println("WARNING: Looks like this user does not have the permission to access UserAccounts on the StarTeam Server!");
-				// System.out.println("WARNING: Please contact your administrator and ask to be given the permission \"Administer User Accounts\" on the server.");
-				// System.out.println("WARNING: Defaulting to just using User Full Names which breaks the ability to send email to the individuals who break the build in Hudson!");
-				canReadUserAccts = false;
-			}
+	private String expandLabelPattern(final String labelName, final int buildNumber) {
+		Matcher m = labelPattern.matcher(labelName);
+		StringBuffer sb = new StringBuffer();
+		while (m.find()) {
+			String fmt = "%" + m.group(1);
+			m.appendReplacement(sb, String.format(fmt, buildNumber));
 		}
-		if (userAccts != null) {
-			for (int i=0; i<userAccts.length; i++) {
-				UserAccount ua = userAccts[i];
-				if (ua.getName().equals(userName)) {
-					System.out.println("INFO: From \'" + userName + "\' found existing user LogonName = " +
-							ua.getLogOnName() + " with ID \'" + ua.getID() + "\' and email \'" + ua.getEmailAddress() +"\'");
-					return ua.getLogOnName();
-				}
-			}
-		} else {
-			// Since the user account running the build does not have user admin perms
-			// use the User Full Name
-			return userName;
+		m.appendTail(sb);
+		return sb.toString();
+	}
+	
+	private void validateLabel(Label label) throws StarTeamSCMException {
+		if (label == null){
+			throw new StarTeamSCMException("Could not find label " + labelName + " in view " + view.getName());
 		}
-		return "unknown";
 	}
-
-	public Folder getRootFolder() {
-		return rootFolder;
-	}
-
-	public OLEDate getServerTime() {
-		return server.getCurrentTime();
-	}
-
-	/**
-	 * @param server
-	 * @param projectname
-	 * @return Project specified by the projectname
-	 * @throws StarTeamSCMException
-	 */
-	static Project findProjectOnServer(final Server server, final String projectname) throws StarTeamSCMException {
-		for (Project project : server.getProjects()) {
-			if (project.getName().equals(projectname)) {
-				return project;
-			}
+	
+	private void validateFolder() throws StarTeamSCMException {
+		if (rootFolder == null) {
+			throw new StarTeamSCMException("Could not find folder " + folderName + " in view " + view.getName());
 		}
-		throw new StarTeamSCMException("Couldn't find project " + projectname + " on server " + server.getAddress());
 	}
-
-	/**
-	 * @param project
-	 * @param viewname
-	 * @return
-	 * @throws StarTeamSCMException
-	 */
-	static View findViewInProject(final Project project, final String viewname) throws StarTeamSCMException {
-		for (View view : project.getAccessibleViews()) {
-			if (view.getName().equals(viewname)) {
-				return view;
-			}
-		}
-		throw new StarTeamSCMException("Couldn't find view " + viewname + " in project " + project.getName());
-	}
-
+	
 	/**
 	 * Close the connection.
 	 */
 	public void close() {
 		if (server.isConnected()) {
 			if (rootFolder != null)	{
-				rootFolder.discardItems(rootFolder.getTypeNames().FILE, -1);
-				rootFolder.discardItems(rootFolder.getTypeNames().FOLDER, -1);
+				rootFolder.discardItems(server.getTypes().FILE, -1);
 			}
 			view.discard();
 			project.discard();
@@ -443,7 +320,7 @@ public class StarTeamConnection implements Serializable {
 				projectName + ", view: " + viewName + ", folder: " + folderName;
 	}
 
-	  /**
+	/**
 	 * @param rootFolder main project directory
 	 * @param workspace a workspace directory
 	 * @param historicFilePoints a collection containing File Points to be compared (previous build)
@@ -453,44 +330,36 @@ public class StarTeamConnection implements Serializable {
 	 * @throws IOException
 	 */
 	public StarTeamChangeSet computeChangeSet(Folder rootFolder, java.io.File workspace, final Collection<StarTeamFilePoint> historicFilePoints, PrintStream logger) throws StarTeamSCMException, IOException {
-	    // --- compute changes as per starteam
+		// --- compute changes as per starteam
 
-	    final Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, workspace);
-	    final Map<java.io.File, com.starbase.starteam.File> starteamFileMap = StarTeamFunctions.convertToFileMap(starteamFiles);
-	    final Collection<java.io.File> starteamFileSet = starteamFileMap.keySet();
-	    final Collection<StarTeamFilePoint> starteamFilePoint = StarTeamFilePointFunctions.convertFilePointCollection(starteamFiles);
+		//all starteam files
+		final Collection<com.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, workspace);
+		//all java.ioFiles and corresponding starteam files
+		final Map<java.io.File, com.starteam.File> starteamFileMap = StarTeamFunctions.convertToFileMap(starteamFiles);
+		// get file path + revisions for starteam files
+		final Collection<StarTeamFilePoint> starteamFilePoint = StarTeamFilePointFunctions.convertFilePointCollection(starteamFiles);
 
-	    final Collection<java.io.File> fileSystemFiles = StarTeamFilePointFunctions.listAllFiles(workspace);
-	    final Collection<java.io.File> fileSystemRemove = new TreeSet<java.io.File>(fileSystemFiles);
-	    fileSystemRemove.removeAll(starteamFileSet);
 
-	    final StarTeamChangeSet changeSet = new StarTeamChangeSet();
-	    changeSet.setFilesToCheckout(starteamFiles);
-	    changeSet.setFilesToRemove(fileSystemRemove);
-	    changeSet.setFilePointsToRemember(starteamFilePoint);
+		final StarTeamChangeSet changeSet = new StarTeamChangeSet();
+		// add all file path + revisions for starteam files to change set
+		changeSet.setFilePointsToRemember(starteamFilePoint);
 
-	    // --- compute differences as per historic storage file
+		// --- compute differences as per historic storage file
+		if (historicFilePoints != null && !historicFilePoints.isEmpty()) {
+			try {
+				changeSet.setComparisonAvailable(true);
+				computeDifference(starteamFilePoint, historicFilePoints, changeSet, starteamFileMap);
+			} catch (Throwable t) {
+				t.printStackTrace(logger);
+			}
+		} else {
+			for (File file: starteamFiles) {
+				changeSet.addChange(FileToStarTeamChangeLogEntry(file));
+			}
+		}
 
-	    if (historicFilePoints != null && !historicFilePoints.isEmpty()) {
-
-	      try {
-
-	        changeSet.setComparisonAvailable(true);
-
-	        computeDifference(starteamFilePoint, historicFilePoints, changeSet, starteamFileMap);
-
-	      } catch (Throwable t) {
-	        t.printStackTrace(logger);
-	      }
-	    } else {
-	    	for (File file: starteamFiles)
-	    	{
-	    		changeSet.addChange(FileToStarTeamChangeLogEntry(file));
-	    	}
-	    }
-
-	    return changeSet;
-	  }
+		return changeSet;
+	}
 
 	public StarTeamChangeLogEntry FileToStarTeamChangeLogEntry (File f)
 	{
@@ -500,64 +369,105 @@ public class StarTeamConnection implements Serializable {
 	public StarTeamChangeLogEntry FileToStarTeamChangeLogEntry (File f, String change)
 	{
 		int revisionNumber = f.getContentVersion();
-		int userId = f.getModifiedBy();
-		String username = getUsername(userId);
+		String username = f.getModifiedBy().getName();
 		String msg = f.getComment();
-		Date date = new Date(f.getModifiedTime().getLongValue());
+		Date date = f.getModifiedTime().toJavaDate();
 		String fileName = f.getName();		
-
 		return new StarTeamChangeLogEntry(fileName,revisionNumber,date,username,msg, change);
 	}
 
-	public StarTeamChangeSet computeDifference(final Collection<StarTeamFilePoint> currentFilePoint, final Collection<StarTeamFilePoint> historicFilePoint, StarTeamChangeSet changeSet, Map<java.io.File, com.starbase.starteam.File> starteamFileMap) {
-		  final Map<java.io.File, StarTeamFilePoint> starteamFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(currentFilePoint);
-		  Map<java.io.File, StarTeamFilePoint> historicFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(historicFilePoint);
-	
-		  final Set<java.io.File> starteamOnly = new HashSet<java.io.File>();
-		  starteamOnly.addAll(starteamFilePointMap.keySet());
-		  starteamOnly.removeAll(historicFilePointMap.keySet());
-	
-		  final Set<java.io.File> historicOnly = new HashSet<java.io.File>();
-		  historicOnly.addAll(historicFilePointMap.keySet());
-		  historicOnly.removeAll(starteamFilePointMap.keySet());
-	
-		  final Set<java.io.File> common = new HashSet<java.io.File>();
-		  common.addAll(starteamFilePointMap.keySet());
-		  common.removeAll(starteamOnly);
-	
-		  final Set<java.io.File> higher = new HashSet<java.io.File>(); // newer revision
-		  final Set<java.io.File> lower = new HashSet<java.io.File>(); // typically rollback of a revision
-		  StarTeamChangeLogEntry change;
-	
-		  for (java.io.File f : common) {
-			  StarTeamFilePoint starteam = starteamFilePointMap.get(f);
-			  StarTeamFilePoint historic = historicFilePointMap.get(f);
-	
-			  if (starteam.getRevisionNumber() == historic.getRevisionNumber()) {
-				  //unchanged files
-				  continue;
-			  }
-			  com.starbase.starteam.File stf = starteamFileMap.get(f);
-			  if (starteam.getRevisionNumber() > historic.getRevisionNumber()) {
-				  higher.add(f);
-				  changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"change"));
-			  }
-			  if (starteam.getRevisionNumber() < historic.getRevisionNumber()) {
-				  lower.add(f);
-				  changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"rollback"));
-			  }
-		  }
-	
-		  for (java.io.File f : historicOnly) {
-			  StarTeamFilePoint historic = historicFilePointMap.get(f);
-			  change = new StarTeamChangeLogEntry(f.getName(), historic.getRevisionNumber(), new Date(), "", "", "removed");
-			  changeSet.addChange(change);
-		  }
-		  for (java.io.File f : starteamOnly) {
-			  com.starbase.starteam.File stf = starteamFileMap.get(f);
-			  changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"added"));
-		  }
-	
-		  return changeSet;
-	  }
+	public StarTeamChangeSet computeDifference(final Collection<StarTeamFilePoint> currentFilePoint, final Collection<StarTeamFilePoint> historicFilePoint, StarTeamChangeSet changeSet, Map<java.io.File, com.starteam.File> starteamFileMap) {
+		final Map<java.io.File, StarTeamFilePoint> starteamFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(currentFilePoint);
+		Map<java.io.File, StarTeamFilePoint> historicFilePointMap = StarTeamFilePointFunctions.convertToFilePointMap(historicFilePoint);
+
+		final Set<java.io.File> starteamOnly = new HashSet<java.io.File>();
+		starteamOnly.addAll(starteamFilePointMap.keySet());
+		starteamOnly.removeAll(historicFilePointMap.keySet());
+
+		final Set<java.io.File> historicOnly = new HashSet<java.io.File>();
+		historicOnly.addAll(historicFilePointMap.keySet());
+		historicOnly.removeAll(starteamFilePointMap.keySet());
+
+		final Set<java.io.File> common = new HashSet<java.io.File>();
+		common.addAll(starteamFilePointMap.keySet());
+		common.removeAll(starteamOnly);
+
+		final Set<java.io.File> higher = new HashSet<java.io.File>(); // newer revision
+		final Set<java.io.File> lower = new HashSet<java.io.File>(); // typically rollback of a revision
+		StarTeamChangeLogEntry change;
+
+		for (java.io.File f : common) {
+			StarTeamFilePoint starteam = starteamFilePointMap.get(f);
+			StarTeamFilePoint historic = historicFilePointMap.get(f);
+
+			if (starteam.getRevisionNumber() == historic.getRevisionNumber()) {
+				//unchanged files
+				continue;
+			}
+			com.starteam.File stf = starteamFileMap.get(f);
+			if (starteam.getRevisionNumber() > historic.getRevisionNumber()) {
+				higher.add(f);
+				changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"change"));
+			}
+			if (starteam.getRevisionNumber() < historic.getRevisionNumber()) {
+				lower.add(f);
+				changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"rollback"));
+			}
+		}
+
+		for (java.io.File f : historicOnly) {
+			StarTeamFilePoint historic = historicFilePointMap.get(f);
+			change = new StarTeamChangeLogEntry(f.getName(), historic.getRevisionNumber(), new Date(), "", "", "removed");
+			changeSet.addChange(change);
+		}
+		for (java.io.File f : starteamOnly) {
+			com.starteam.File stf = starteamFileMap.get(f);
+			changeSet.addChange(FileToStarTeamChangeLogEntry(stf,"added"));
+		}
+
+		return changeSet;
+	}
+
+	public Folder getRootFolder() {
+		return rootFolder;
+	}
+
+	/**
+	 * populate the description of the server info.
+	 *
+	 * @param serverInfo
+	 */
+	void populateDescription(ServerInfo serverInfo) {
+		// Increment a counter until the description is unique
+		int counter = 0;
+		while (!setDescription(serverInfo, counter))
+			++counter;
+	}
+
+	private boolean setDescription(ServerInfo serverInfo, int counter) {
+		try {
+			serverInfo.setDescription("StarTeam connection to " + this.hostName + ((counter == 0) ? "" : " (" + Integer.toString(counter) + ")"));
+			return true;
+		} catch (DuplicateServerListEntryException e) {
+			return false;
+		}
+	}
+
+	public void checkout(java.io.File workspace) {
+		CommandProcessor cmdProc = new CommandProcessor(view);
+		String setProjectAndViewCommand = "set project=\"" + view.getProject().getName() + "\" "
+										+ "viewHierarchy=\"" + viewName.replace('/', ':') + "\" "
+										+ "folderHierarchy=\"" + folderName + "\"";
+		cmdProc.execute(setProjectAndViewCommand);
+		
+		String command = "co -o -is -cwf -f NCD";
+		command = command + " -fp \"" + workspace.getAbsolutePath() + "\"";
+		if(labelName != null && promotionstate){
+			command = command + " -cfgp \"" + labelName + "\"";
+		} else if (isLabel()){
+			command = command + " -cfgl \"" + labelName + "\"";
+		}
+
+		cmdProc.execute(command);
+	}
 }
