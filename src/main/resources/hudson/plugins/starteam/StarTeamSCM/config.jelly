@@ -1,36 +1,37 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
-	xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
-	xmlns:f="/lib/form">
-	<!--
-		This jelly script is used for per-project configuration.
-		
-		See global.jelly for a general discussion about jelly script.
-	-->
-	<f:entry title="Hostname" help="/plugin/starteam/help/sthostname.html">
-		<f:textbox name="starteam.hostname" value="${scm.hostname}" />
+	xmlns:d="jelly:define" 
+	xmlns:l="/lib/layout" 
+	xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form" 
+	xmlns:c="/lib/credentials">
+
+	<f:entry title="Hostname" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/sthostname" field="hostName">
+		<f:textbox name="hostName" value="${scm.hostName}" />
 	</f:entry>
-	<f:entry title="Port" help="/plugin/starteam/help/stport.html">
-		<f:textbox name="starteam.port" value="${scm.port}" />
+	<f:entry title="Port" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/stport" field="port">
+		<f:textbox name="port" value="${scm.port}" />
 	</f:entry>
-	<f:entry title="Project name" help="/plugin/starteam/help/stprojectname.html">
-		<f:textbox name="starteam.projectname" value="${scm.projectname}" />
+	<f:entry title="Project name" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/stprojectname" field="projectName">
+		<f:textbox name="projectName" value="${scm.projectName}" />
 	</f:entry>
-	<f:entry title="View name" help="/plugin/starteam/help/stviewname.html">
-		<f:textbox name="starteam.viewname" value="${scm.viewname}" />
+	<f:entry title="View name" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/stviewname" field="viewName">
+		<f:textbox name="viewName" value="${scm.viewName}" />
 	</f:entry>
-    <f:entry title="Label name (optional)" help="/plugin/starteam/help/stlabelname.html">
-        <f:textbox name="starteam.labelname" value="${scm.labelname}"/>
-    </f:entry>
-    <f:entry title="Label is Promotion State?" help="/plugin/starteam/help/stpromotionstate.html">
-        <f:checkbox name="starteam.promotionstate" checked="${scm.promotionstate}"/>
-    </f:entry>
-	<f:entry title="Folder name" help="/plugin/starteam/help/stfoldername.html">
-		<f:textbox name="starteam.foldername" value="${scm.foldername}" />
+	<f:entry title="Folder name" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/stfoldername" field="folderName">
+		<f:textbox name="folderName" value="${scm.folderName}" />
 	</f:entry>
-	<f:entry title="Username" help="/plugin/starteam/help/stusername.html">
-		<f:textbox name="starteam.username" value="${scm.username}" />
-	</f:entry>
-	<f:entry title="Password" help="/plugin/starteam/help/stpassword.html">
-		<f:password name="starteam.password" value="${scm.password}" />
-	</f:entry>
+	<f:entry title="${%Credentials}" field="credentialsId">
+      <c:select/>
+  	</f:entry>
+   	<f:advanced>
+   		<f:entry title="Label name (optional)" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/stlabelname" field="labelName">
+    	    <f:textbox name="labelName" value="${scm.labelName}"/>
+    	</f:entry>
+    	<f:entry title="Label is Promotion State?" help="/descriptor/hudson.plugins.starteam.StarTeamSCM/help/stpromotionstate" field="promotionstate">
+	        <f:checkbox name="promotionstate" checked="${scm.promotionstate}"/>
+	    </f:entry>
+	</f:advanced>
+	<f:validateButton
+   		title="${%Test Connection}" progress="${%Testing...}"
+   		method="testConnection" with="hostName,port,projectName,viewName,folderName,credentialsId,labelName,promotionstate" />
 </j:jelly>
