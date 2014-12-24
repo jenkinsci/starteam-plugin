@@ -32,7 +32,7 @@ THE SOFTWARE.
   </parent>
 
   <artifactId>StarTeam</artifactId>
-  <version>0.7.0-BETA-SNAPSHOT</version>
+  <version>0.7.0-BETA</version>
   <packaging>hpi</packaging>
 
   <name>Jenkins StarTeam Plug-in</name>
@@ -154,6 +154,7 @@ THE SOFTWARE.
     <connection>scm:git:ssh://github.com/jenkinsci/starteam-plugin.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/starteam-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/starteam-plugin</url>
+    <tag>StarTeam-0.7.0-BETA</tag>
   </scm>
   <distributionManagement>
     <repository>
