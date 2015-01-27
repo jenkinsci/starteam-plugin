@@ -77,8 +77,8 @@ public class StarteamConnectionIntegrationTest {
 	 */
 	@Test
 	public void testFindAllFiles() {
-		
-		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(starTeamConnection.getRootFolder(), parentDirectory);
+		boolean ignoreWorkingFolder = false;
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(starTeamConnection.getRootFolder(), ignoreWorkingFolder, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		int i=0;
@@ -89,7 +89,7 @@ public class StarteamConnectionIntegrationTest {
 		}
 		starTeamConnection.close() ;
 	}
-	
+
 	/**
 	 * find all changed files in starteam repository.
 	 * @throws IOException 
@@ -111,7 +111,7 @@ public class StarteamConnectionIntegrationTest {
 		// there is no list of previous files 
 		Folder rootFolder = oldStarTeamConnection.getRootFolder();
 		File workspace = parentDirectory;
-		StarTeamChangeSet oldChangeSet = oldStarTeamConnection.computeChangeSet(rootFolder, workspace, null, System.out);
+		StarTeamChangeSet oldChangeSet = oldStarTeamConnection.computeChangeSet(rootFolder, true, workspace, null, System.out);
 
 		// a sanity check - everything in the old set should be new, because it doesn't have a previous build
 		Assert.assertNotNull(oldChangeSet) ;
@@ -129,7 +129,7 @@ public class StarteamConnectionIntegrationTest {
 		
 		// get the change set from connection using historical list of files
 		rootFolder = starTeamConnection.getRootFolder();
-		StarTeamChangeSet newChangeSet = starTeamConnection.computeChangeSet(rootFolder, workspace, historicStarteamFilePoint, System.out);
+		StarTeamChangeSet newChangeSet = starTeamConnection.computeChangeSet(rootFolder, true, workspace, historicStarteamFilePoint, System.out);
 		Assert.assertNotNull(newChangeSet) ;
 		Assert.assertTrue(newChangeSet.isComparisonAvailable()) ;
 		Assert.assertTrue(newChangeSet.hasChanges()) ;

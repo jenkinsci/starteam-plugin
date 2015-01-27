@@ -47,6 +47,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	private final Collection<StarTeamFilePoint> historicFilePoints;
 	private final FilePath filePointFilePath;
 	private final int buildNumber;
+        private final boolean ignoreWorkingFolder;
 
 	/**
 	 * 
@@ -75,7 +76,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	 */
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, FilePath changelogFile, BuildListener listener,
+			String foldername, StarTeamViewSelector config, boolean ignoreWorkingFolder, FilePath changelogFile, BuildListener listener,
 			AbstractBuild<?, ?> build, FilePath filePointFilePath ) {
 		this.hostname = hostname;
 		this.port = port;
@@ -87,6 +88,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		this.changelog = changelogFile;
 		this.listener = listener;
 		this.config = config;
+                this.ignoreWorkingFolder = ignoreWorkingFolder;
 		this.filePointFilePath = filePointFilePath;
 		// Would like to store build in its entirety, but it is not serializable.
 		if (build == null) {
@@ -136,13 +138,17 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		}
 		listener.getLogger().println("Initialized StarTeam connection.");
 		
-		listener.getLogger().print("Computing change set ");
+		listener.getLogger().println("Computing change set ");
+                
+                if(ignoreWorkingFolder) {
+                        listener.getLogger().println("Working folders will be ignored.");
+                }
 
 		StarTeamChangeSet changeSet;
 		try {
 			Folder rootFolder = connection.getRootFolder();
-			changeSet = connection.computeChangeSet(rootFolder,workspace,historicFilePoints,listener.getLogger());
-			// Check 'em out
+			changeSet = connection.computeChangeSet(rootFolder, ignoreWorkingFolder, workspace,historicFilePoints,listener.getLogger());
+                        // Check 'em out
 			listener.getLogger().println("performing checkout ...");
 
 			connection.checkOut(changeSet, listener.getLogger(), filePointFilePath);

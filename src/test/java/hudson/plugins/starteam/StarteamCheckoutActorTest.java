@@ -80,6 +80,7 @@ public class StarteamCheckoutActorTest {
 		String folderName = System.getProperty("test.starteam.foldername", "NGBL/source/ant");
 		String userName = System.getProperty("test.starteam.username", "");
 		String password = System.getProperty("test.starteam.password", "");
+                boolean ignoreWorkingFolder = false;
 		
 		FilePath changeLogFilePath = new FilePath( changeLogFile ) ;
 		FilePath filePointsFilePath = new FilePath(filePointsFile);
@@ -91,7 +92,7 @@ public class StarteamCheckoutActorTest {
 		}
 		
 		AbstractBuild<?,?> build = null;
-		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, changeLogFilePath, listener, build, filePointsFilePath) ;
+		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, ignoreWorkingFolder, changeLogFilePath, listener, build, filePointsFilePath) ;
 
 		return starTeamCheckoutActor ;
 	}

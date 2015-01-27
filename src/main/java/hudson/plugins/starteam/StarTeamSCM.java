@@ -51,6 +51,7 @@ public class StarTeamSCM extends SCM {
 	private final int port;
 	private final String labelname;
 	private final boolean promotionstate;
+        private final boolean ignoreWorkingFolder;
 
 	private final StarTeamViewSelector config;
 	
@@ -76,11 +77,12 @@ public class StarTeamSCM extends SCM {
 	 *            label name used for polling view contents
 	 * @param promotionstate 
 	 *            indication if label name is actual label name or a promotion state name
-	 *
+	 * @param ignoreWorkingFolder
+         *             option to ignore working folders and checkout all files in the workspace 
 	 */
 	@DataBoundConstructor
 	public StarTeamSCM(String hostname, int port, String projectname,
-			String viewname, String foldername, String username, String password, String labelname, boolean promotionstate) {
+			String viewname, String foldername, String username, String password, String labelname, boolean promotionstate, boolean ignoreWorkingFolder) {
 		this.hostname = hostname;
 		this.port = port;
 		this.projectname = projectname;
@@ -90,6 +92,7 @@ public class StarTeamSCM extends SCM {
 		this.passwd = password;
 		this.labelname = labelname;
 		this.promotionstate = promotionstate;
+                this.ignoreWorkingFolder = ignoreWorkingFolder;
 		StarTeamViewSelector result = null;
 		if ((this.labelname != null) && (this.labelname.length() != 0))
 		{
@@ -126,7 +129,7 @@ public class StarTeamSCM extends SCM {
 
 	    // Create an actor to do the checkout, possibly on a remote machine
 	    StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-	            port, user, passwd, projectname, viewname, foldername, config,
+	            port, user, passwd, projectname, viewname, foldername, config, ignoreWorkingFolder,
 	            changeLogFilePath, listener, build, filePointFilePath);
 	    if (workspace.act(co_actor)) {
 	        // change log is written during checkout (only one pass for
@@ -185,7 +188,7 @@ public class StarTeamSCM extends SCM {
 		// Create an actor to do the polling, possibly on a remote machine
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
 				user, passwd, projectname, viewname, foldername,
-				config, listener,
+				config, ignoreWorkingFolder, listener,
 				historicFilePoints);
 		if (workspace.act(p_actor)) {
 			status = true;
@@ -329,4 +332,13 @@ public class StarTeamSCM extends SCM {
 	public boolean isPromotionstate() {
 		return promotionstate;
 	}
+        
+        /**
+	 * Is the label a promotion state name?
+	 *
+	 * @return True if working folders are ignored during checkouts.
+	 */
+        public boolean isIgnoreWorkingFolder() {
+            return ignoreWorkingFolder;
+        }
 }
