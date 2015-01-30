@@ -24,6 +24,9 @@
     <f:entry title="Label is Promotion State?" help="/plugin/starteam/help/stpromotionstate.html">
         <f:checkbox name="starteam.promotionstate" checked="${scm.promotionstate}"/>
     </f:entry>
+    <f:entry title="Ignore working folders?" help="/plugin/starteam/help/stignoreworkingfolder.html">
+        <f:checkbox name="starteam.ignoreWorkingFolder" checked="${scm.ignoreWorkingFolder}"/>
+    </f:entry>
 	<f:entry title="Folder name" help="/plugin/starteam/help/stfoldername.html">
 		<f:textbox name="starteam.foldername" value="${scm.foldername}" />
 	</f:entry>

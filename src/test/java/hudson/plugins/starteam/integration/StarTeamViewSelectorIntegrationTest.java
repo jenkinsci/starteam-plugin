@@ -82,7 +82,7 @@ public class StarTeamViewSelectorIntegrationTest {
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize(-1) ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
-		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, true, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;
@@ -108,7 +108,7 @@ public class StarTeamViewSelectorIntegrationTest {
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize(-1) ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
-		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, true, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;
@@ -123,7 +123,7 @@ public class StarTeamViewSelectorIntegrationTest {
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize(-1) ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
-		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, true, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;
@@ -147,7 +147,7 @@ public class StarTeamViewSelectorIntegrationTest {
 		starTeamConnection = new StarTeamConnection( hostName, port, userName, password, projectName, viewName, folderName, selector) ;
 		starTeamConnection.initialize(-1) ;
 		Folder rootFolder = starTeamConnection.getRootFolder();
-		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, parentDirectory);
+		Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, true, parentDirectory);
 		Assert.assertNotNull(starteamFiles) ;
 		Assert.assertTrue( starteamFiles.size() > 0 ) ;
 		starTeamConnection.close() ;

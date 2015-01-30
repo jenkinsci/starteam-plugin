@@ -83,21 +83,21 @@ public class StarTeamFunctions {
 		return null;
 	}
 
-  public static Collection<File> listAllFiles(Map<String,Folder> rootFolderMap, java.io.File workspace) {
+  public static Collection<File> listAllFiles(Map<String,Folder> rootFolderMap, boolean ignoreWorkingFolder, java.io.File workspace) {
 		Collection<File> result = new ArrayList<File>();
 
     for (Map.Entry<String,Folder> f:rootFolderMap.entrySet()) {
-      result.addAll(listAllFiles(f.getValue(),workspace));
+      result.addAll(listAllFiles(f.getValue(), ignoreWorkingFolder, workspace));
     }
 
 		return result;
 	}
 
-  public static Collection<File> listAllFiles(Folder rootFolder, java.io.File workspace) {
+  public static Collection<File> listAllFiles(Folder rootFolder, boolean ignoreWorkingFolder, java.io.File workspace) {
 		Collection<File> result = new ArrayList<File>();
     // set root folder
 		String alternatePath = rootFolder.getAlternatePathFragment();
-		if (alternatePath == null)
+		if (alternatePath == null || ignoreWorkingFolder)
 		{
 			alternatePath = "";
 		}
@@ -105,14 +105,18 @@ public class StarTeamFunctions {
 		rootFolder.setAlternatePathFragment(actualPlace.getAbsolutePath());
 
 		// Get a list of all files
-		listAllFiles(result, rootFolder);
+		listAllFiles(result, rootFolder, ignoreWorkingFolder);
 
 		return result;
 	}
 
-  private static void listAllFiles(Collection<File> result, Folder folder) {
+  private static void listAllFiles(Collection<File> result, Folder folder, boolean ignoreWorkingFolder) {
     for (Folder f : folder.getSubFolders()) {
-      listAllFiles(result, f);
+        if(ignoreWorkingFolder) {
+            // Use relative hierarchy recursively
+            f.setAlternatePathFragment(folder.getFilePath(f.getName()));
+        }
+      listAllFiles(result, f, ignoreWorkingFolder);
     }
     // find items in this folder
     for (Item i : folder.getItems(folder.getView().getProject().getServer()

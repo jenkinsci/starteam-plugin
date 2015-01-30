@@ -45,6 +45,8 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	private final StarTeamViewSelector config;
 
 	private Collection<StarTeamFilePoint> historicFilePoints;
+        
+        private final boolean useWorkingFolder;
 
 	/**
 	 * Default constructor.
@@ -56,12 +58,13 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param viewname  starteam view name
 	 * @param foldername starteam parent folder name
 	 * @param config configuration selector
+         * @param ignoreWorkingFolder option to checkout file using a relative hierarchy
 	 * @param listener Hudson task listener.
 	 * @param historicFilePoints  
 	 */
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
+			String foldername, StarTeamViewSelector config, boolean useWorkingFolder, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -71,6 +74,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		this.foldername = foldername;
 		this.listener = listener;
 		this.config = config;
+                this.useWorkingFolder = useWorkingFolder;
 		this.historicFilePoints=historicFilePoints;
 	}
 
@@ -95,7 +99,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 		StarTeamChangeSet changeSet = null;
 		try {
-			changeSet = connection.computeChangeSet(connection.getRootFolder(), f, historicFilePoints , listener.getLogger());
+			changeSet = connection.computeChangeSet(connection.getRootFolder(), useWorkingFolder, f, historicFilePoints , listener.getLogger());
 		} catch (StarTeamSCMException e) {
 			e.printStackTrace(listener.getLogger());
 		}

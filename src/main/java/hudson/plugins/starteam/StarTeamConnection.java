@@ -452,10 +452,10 @@ public class StarTeamConnection implements Serializable {
 	 * @throws StarTeamSCMException
 	 * @throws IOException
 	 */
-	public StarTeamChangeSet computeChangeSet(Folder rootFolder, java.io.File workspace, final Collection<StarTeamFilePoint> historicFilePoints, PrintStream logger) throws StarTeamSCMException, IOException {
+	public StarTeamChangeSet computeChangeSet(Folder rootFolder, boolean ignoreWorkingFolder, java.io.File workspace, final Collection<StarTeamFilePoint> historicFilePoints, PrintStream logger) throws StarTeamSCMException, IOException {
 	    // --- compute changes as per starteam
 
-	    final Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, workspace);
+	    final Collection<com.starbase.starteam.File> starteamFiles = StarTeamFunctions.listAllFiles(rootFolder, ignoreWorkingFolder, workspace);
 	    final Map<java.io.File, com.starbase.starteam.File> starteamFileMap = StarTeamFunctions.convertToFileMap(starteamFiles);
 	    final Collection<java.io.File> starteamFileSet = starteamFileMap.keySet();
 	    final Collection<StarTeamFilePoint> starteamFilePoint = StarTeamFilePointFunctions.convertFilePointCollection(starteamFiles);
